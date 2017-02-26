@@ -13,8 +13,12 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.android.moviedb.models.Results;
+import com.example.android.moviedb.utilities.JSONUtils;
 import com.example.android.moviedb.utilities.NetworkUtils;
 import com.example.android.moviedb.utilities.QueryUtils;
+
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener, LoaderManager.LoaderCallbacks<String>{
 
@@ -90,7 +94,14 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
                 String JSONResponse = NetworkUtils.makeHTTPRequest(finalUrl);
 
-                return JSONResponse;
+                List<Results> movieList = JSONUtils.parseJSON(JSONResponse);
+
+                String output = "";
+
+                for(Results object : movieList){
+                    output = output + "\n" + object.getTitle();
+                }
+                return output;
             }
         };
     }

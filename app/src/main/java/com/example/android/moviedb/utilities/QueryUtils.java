@@ -12,6 +12,8 @@ import com.example.android.moviedb.R;
 
 public class QueryUtils {
 
+    public static final String LOG_TAG = QueryUtils.class.getSimpleName();
+
     private static final String SCHEME = "https";
     private static final String AUTHORITY = "api.themoviedb.org";
 

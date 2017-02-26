@@ -12,6 +12,8 @@ import okhttp3.Response;
 
 public class NetworkUtils {
 
+    public static final String LOG_TAG = NetworkUtils.class.getSimpleName();
+
     /**
      * Helper Method to fetch movie data using OKHttpClient
      * @param finalUri is the url to be hit in String format
