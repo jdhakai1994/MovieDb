@@ -12,7 +12,7 @@ import com.example.android.moviedb.R;
 
 public class QueryUtils {
 
-    public static final String LOG_TAG = QueryUtils.class.getSimpleName();
+    private static final String LOG_TAG = QueryUtils.class.getSimpleName();
 
     private static final String SCHEME = "https";
     private static final String AUTHORITY = "api.themoviedb.org";
@@ -27,13 +27,17 @@ public class QueryUtils {
 
     private static final String API_KEY_CONSTANT = "0714b520af4b472889d9b6ce22e54173";
 
+    private static final String IMAGE_SIZE = "w342";
+    private static final String IMAGE_BASE_URI = "https://image.tmdb.org/t/p";
+
+
     /**
      * Helper Method to build a uri based on sort option
      * @param context is the application context
      * @param sortByOption is the sort option choice most_popular/highest_rated
      * @return the final uri in String format
      */
-    public static String getUriString(Context context, String sortByOption){
+    public static String getQueryUrl(Context context, String sortByOption){
         Uri.Builder builder = new Uri.Builder();
 
         // sample -> https://api.themoviedb.org/3/movie/popular?page=1&api_key=0714b520af4b472889d9b6ce22e54173
@@ -55,6 +59,16 @@ public class QueryUtils {
                     .appendPath(HIGHEST_RATED_PATH)
                     .appendQueryParameter(PAGE_QUERY_PARAMETER, "1")
                     .appendQueryParameter(API_QUERY_PARAMETER, API_KEY_CONSTANT);
+
+        return builder.build().toString();
+    }
+
+    public static String getPosterImageUrl(String posterPath){
+
+        Uri uri = Uri.parse(IMAGE_BASE_URI);
+        Uri.Builder builder = uri.buildUpon();
+        builder.appendPath(IMAGE_SIZE)
+                .appendPath(posterPath.substring(1));
 
         return builder.build().toString();
     }

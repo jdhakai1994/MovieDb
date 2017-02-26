@@ -5,14 +5,16 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.PopupMenu;
+import android.support.v7.widget.RecyclerView;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.android.moviedb.adapter.MovieAdapter;
 import com.example.android.moviedb.models.Results;
 import com.example.android.moviedb.utilities.JSONUtils;
 import com.example.android.moviedb.utilities.NetworkUtils;
@@ -20,22 +22,29 @@ import com.example.android.moviedb.utilities.QueryUtils;
 
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener, LoaderManager.LoaderCallbacks<String>{
+public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener, LoaderManager.LoaderCallbacks<List<Results>>{
 
-    public static final String LOG_TAG = MainActivity.class.getSimpleName();
+    private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
     public final int FETCH_MOVIE_ID = 1;
 
-    private TextView mJsonView;
+    private RecyclerView mRecyclerView;
+    private MovieAdapter mMovieAdapter;
+    private RecyclerView.LayoutManager mLayoutManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mJsonView = (TextView) findViewById(R.id.tv_json);
+        mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+        mLayoutManager = new GridLayoutManager(MainActivity.this, 2);
+        mRecyclerView.setLayoutManager(mLayoutManager);
 
-        LoaderManager.LoaderCallbacks<String> loaderCallback = MainActivity.this;
+        mMovieAdapter = new MovieAdapter(MainActivity.this);
+        mRecyclerView.setAdapter(mMovieAdapter);
+
+        LoaderManager.LoaderCallbacks<List<Results>> loaderCallback = MainActivity.this;
         Bundle loaderBundle = new Bundle();
         loaderBundle.putString(getString(R.string.sort_by), getString(R.string.most_popular));
 
@@ -62,7 +71,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
     @Override
     public boolean onMenuItemClick(MenuItem item) {
-        LoaderManager.LoaderCallbacks<String> loaderCallback = MainActivity.this;
+        LoaderManager.LoaderCallbacks<List<Results>> loaderCallback = MainActivity.this;
         Bundle loaderBundle = new Bundle();
         switch (item.getItemId()) {
             case R.id.i_most_popular:
@@ -81,39 +90,34 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     }
 
     @Override
-    public Loader<String> onCreateLoader(int id, final Bundle args) {
-        return new AsyncTaskLoader<String>(MainActivity.this) {
+    public Loader<List<Results>> onCreateLoader(int id, final Bundle args) {
+        return new AsyncTaskLoader<List<Results>>(MainActivity.this) {
             @Override
             protected void onStartLoading() {
                 forceLoad();
             }
 
             @Override
-            public String loadInBackground() {
-                String finalUrl = QueryUtils.getUriString(MainActivity.this, args.getString(getString(R.string.sort_by)));
+            public List<Results> loadInBackground() {
+
+                String finalUrl = QueryUtils.getQueryUrl(MainActivity.this, args.getString(getString(R.string.sort_by)));
 
                 String JSONResponse = NetworkUtils.makeHTTPRequest(finalUrl);
 
                 List<Results> movieList = JSONUtils.parseJSON(JSONResponse);
 
-                String output = "";
-
-                for(Results object : movieList){
-                    output = output + "\n" + object.getTitle();
-                }
-                return output;
+                return movieList;
             }
         };
     }
 
     @Override
-    public void onLoadFinished(Loader<String> loader, String data) {
-
-        mJsonView.setText(data);
+    public void onLoadFinished(Loader<List<Results>> loader, List<Results> data) {
+        mMovieAdapter.setMovieData(data);
     }
 
     @Override
-    public void onLoaderReset(Loader<String> loader) {
+    public void onLoaderReset(Loader<List<Results>> loader) {
 
     }
 
@@ -129,6 +133,4 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         popup.inflate(R.menu.sortby_menu);
         popup.show();
     }
-
-
 }
