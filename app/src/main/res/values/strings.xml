@@ -1,7 +1,18 @@
 <resources>
     <string name="app_name">MovieDb</string>
+    <string name="detail_activity_title">Details</string>
+
     <string name="most_popular">Most Popular</string>
     <string name="highest_rated">Highest Rated</string>
     <string name="sort_by">Sort By</string>
+
     <string name="content_descriptor_poster">Poster</string>
+    <string name="content_descriptor_backdrop">Backdrop</string>
+    <string name="content_descriptor_error_image">Error Loading Image</string>
+
+    <string name="error_loading_image_toast">The image couldn\'t be loaded</string>
+
+    <string name="vote_average_add_on">/10</string>
+
+    <string name="synopsis_title">Synopsis</string>
 </resources>

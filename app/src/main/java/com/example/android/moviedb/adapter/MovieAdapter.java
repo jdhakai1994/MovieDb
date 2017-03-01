@@ -25,18 +25,33 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder> 
     private List<Results> mDataset;
     private Context mContext;
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
+    final private GridItemClickListener mOnClickListener;
+
+    public interface GridItemClickListener{
+        void onClick(Results object);
+    }
+
+    public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
         public ImageView poster;
 
         public ViewHolder(View v) {
             super(v);
             poster = (ImageView) v.findViewById(R.id.iv_poster);
+            v.setOnClickListener(this);
+        }
+
+        @Override
+        public void onClick(View v) {
+            int adapterPosition = getAdapterPosition();
+            Results movie = mDataset.get(adapterPosition);
+            mOnClickListener.onClick(movie);
         }
     }
 
-    public MovieAdapter(Context context) {
+    public MovieAdapter(Context context, GridItemClickListener listener) {
         mContext = context;
+        mOnClickListener = listener;
     }
 
     @Override

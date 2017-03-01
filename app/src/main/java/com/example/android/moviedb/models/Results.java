@@ -2,11 +2,13 @@ package com.example.android.moviedb.models;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.io.Serializable;
+
 /**
  * Created by Jayabrata Dhakai on 2/26/2017.
  */
 
-public class Results {
+public class Results implements Serializable{
 
     private String title;
     private String overview;
@@ -15,7 +17,9 @@ public class Results {
     @SerializedName("release_date")
     private String releaseDate;
     @SerializedName("vote_average")
-    private float voteAverage;
+    private String voteAverage;
+    @SerializedName("backdrop_path")
+    private String backdropPath;
 
     public String getTitle() {
         return title;
@@ -33,7 +37,11 @@ public class Results {
         return releaseDate;
     }
 
-    public float getVoteAverage() {
+    public String getVoteAverage() {
         return voteAverage;
+    }
+
+    public String getBackdropPath() {
+        return backdropPath;
     }
 }

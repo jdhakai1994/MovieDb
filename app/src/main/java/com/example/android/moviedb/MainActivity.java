@@ -1,5 +1,6 @@
 package com.example.android.moviedb;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
@@ -8,6 +9,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -22,7 +24,7 @@ import com.example.android.moviedb.utilities.QueryUtils;
 
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener, LoaderManager.LoaderCallbacks<List<Results>>{
+public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener, LoaderManager.LoaderCallbacks<List<Results>>, MovieAdapter.GridItemClickListener{
 
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
@@ -41,7 +43,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         mLayoutManager = new GridLayoutManager(MainActivity.this, 2);
         mRecyclerView.setLayoutManager(mLayoutManager);
 
-        mMovieAdapter = new MovieAdapter(MainActivity.this);
+        mMovieAdapter = new MovieAdapter(MainActivity.this, this);
         mRecyclerView.setAdapter(mMovieAdapter);
 
         LoaderManager.LoaderCallbacks<List<Results>> loaderCallback = MainActivity.this;
@@ -89,6 +91,19 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         }
     }
 
+    /**
+     * Helper Method to display the pop-up menu
+     * @param v is the view to which the pop-up will be attached
+     */
+    public void showMenu(View v) {
+        PopupMenu popup = new PopupMenu(MainActivity.this, v);
+
+        // This activity implements OnMenuItemClickListener
+        popup.setOnMenuItemClickListener(this);
+        popup.inflate(R.menu.sortby_menu);
+        popup.show();
+    }
+
     @Override
     public Loader<List<Results>> onCreateLoader(int id, final Bundle args) {
         return new AsyncTaskLoader<List<Results>>(MainActivity.this) {
@@ -121,16 +136,11 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
     }
 
-    /**
-     * Helper Method to display the pop-up menu
-     * @param v is the view to which the pop-up will be attached
-     */
-    public void showMenu(View v) {
-        PopupMenu popup = new PopupMenu(MainActivity.this, v);
-
-        // This activity implements OnMenuItemClickListener
-        popup.setOnMenuItemClickListener(this);
-        popup.inflate(R.menu.sortby_menu);
-        popup.show();
+    @Override
+    public void onClick(Results object) {
+        Log.d(LOG_TAG, object.getTitle());
+        Intent detailIntent = new Intent(MainActivity.this, DetailActivity.class);
+        detailIntent.putExtra("results", object);
+        startActivity(detailIntent);
     }
 }

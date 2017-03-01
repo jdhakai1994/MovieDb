@@ -28,6 +28,7 @@ public class QueryUtils {
     private static final String API_KEY_CONSTANT = "0714b520af4b472889d9b6ce22e54173";
 
     private static final String IMAGE_SIZE = "w342";
+    private static final String IMAGE_SIZE_DETAIL = "w185";
     private static final String IMAGE_BASE_URI = "https://image.tmdb.org/t/p";
 
 
@@ -69,6 +70,26 @@ public class QueryUtils {
         Uri.Builder builder = uri.buildUpon();
         builder.appendPath(IMAGE_SIZE)
                 .appendPath(posterPath.substring(1));
+
+        return builder.build().toString();
+    }
+
+    public static String getPosterImageUrlDetail(String posterPath){
+
+        Uri uri = Uri.parse(IMAGE_BASE_URI);
+        Uri.Builder builder = uri.buildUpon();
+        builder.appendPath(IMAGE_SIZE_DETAIL)
+                .appendPath(posterPath.substring(1));
+
+        return builder.build().toString();
+    }
+
+    public static String getBackdropImageUrl(String backdropPath){
+
+        Uri uri = Uri.parse(IMAGE_BASE_URI);
+        Uri.Builder builder = uri.buildUpon();
+        builder.appendPath(IMAGE_SIZE)
+                .appendPath(backdropPath.substring(1));
 
         return builder.build().toString();
     }

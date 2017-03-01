@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_detail"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="com.example.android.moviedb.DetailActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" >
+
+        <RelativeLayout
+            android:id="@+id/backdrop_holder"
+            android:layout_width="match_parent"
+            android:layout_height="250dp">
+
+            <ProgressBar
+                android:id="@+id/pb_backdrop_image"
+                android:visibility="visible"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_margin="16dp"
+                android:layout_centerInParent="true"/>
+
+            <ImageView
+                android:id="@+id/iv_backdrop"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitXY"
+                android:contentDescription="@string/content_descriptor_backdrop"
+                android:visibility="visible"
+                tools:src="@drawable/backdrop342"/>
+
+            <ImageView
+                android:id="@+id/iv_backdrop_error_image"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitXY"
+                android:contentDescription="@string/content_descriptor_error_image"
+                android:visibility="gone"
+                android:src="@drawable/error_image" />
+
+            <TextView
+                android:id="@+id/tv_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textSize="24sp"
+                android:textColor="@color/colorStandoutText"
+                android:typeface="serif"
+                android:layout_alignParentBottom="true"
+                android:layout_marginLeft="8dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginRight="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginBottom="8dp"
+                tools:text="Batman v Superman: Dawn of Justice" />
+
+        </RelativeLayout>
+
+        <android.support.v7.widget.CardView
+            android:id="@+id/cv_details"
+            android:layout_width="match_parent"
+            android:layout_height="200dp">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <RelativeLayout
+                    android:id="@+id/poster_holder"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+
+                    <ProgressBar
+                        android:id="@+id/pb_poster_image"
+                        android:visibility="visible"
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:layout_margin="16dp"
+                        android:layout_centerInParent="true"/>
+
+                    <ImageView
+                        android:id="@+id/iv_poster_error_image"
+                        android:layout_width="160dp"
+                        android:layout_height="160dp"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginLeft="16dp"
+                        android:layout_marginStart="16dp"
+                        android:scaleType="fitXY"
+                        android:visibility="gone"
+                        android:contentDescription="@string/content_descriptor_poster"
+                        android:src="@drawable/error_image" />
+
+                    <ImageView
+                        android:id="@+id/iv_poster"
+                        android:layout_width="160dp"
+                        android:layout_height="160dp"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginLeft="16dp"
+                        android:layout_marginStart="16dp"
+                        android:scaleType="fitXY"
+                        android:visibility="visible"
+                        android:contentDescription="@string/content_descriptor_poster"
+                        tools:src="@drawable/poster185" />
+                </RelativeLayout>
+
+                <TextView
+                    android:id="@+id/tv_detail_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_toRightOf="@+id/poster_holder"
+                    android:layout_toEndOf="@+id/poster_holder"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginRight="16dp"
+                    android:layout_marginLeft="16dp"
+                    android:ellipsize="end"
+                    android:fontFamily="sans-serif"
+                    android:textSize="20sp"
+                    android:textColor="@color/colorPrimaryText"
+                    android:maxLines="3"
+                    tools:text="Batman v Superman: Dawn of Justice "/>
+
+                <TextView
+                    android:id="@+id/tv_detail_release_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_toRightOf="@+id/poster_holder"
+                    android:layout_toEndOf="@+id/poster_holder"
+                    android:layout_below="@+id/tv_detail_title"
+                    android:layout_marginRight="16dp"
+                    android:layout_marginLeft="16dp"
+                    android:paddingTop="8dp"
+                    android:textSize="16sp"
+                    android:textColor="@color/colorPrimaryText"
+                    tools:text="2017-02-08"/>
+
+                <TextView
+                    android:id="@+id/tv_detail_vote_average"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_toRightOf="@+id/poster_holder"
+                    android:layout_toEndOf="@+id/poster_holder"
+                    android:layout_below="@+id/tv_detail_release_date"
+                    android:layout_marginRight="16dp"
+                    android:layout_marginLeft="16dp"
+                    android:paddingTop="8dp"
+                    android:textSize="16sp"
+                    android:textColor="@color/colorPrimaryText"
+                    tools:text="6.3/10"/>
+
+            </RelativeLayout>
+        </android.support.v7.widget.CardView>
+
+        <android.support.v7.widget.CardView
+            android:id="@+id/cv_synopsis"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" >
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" >
+
+                <TextView
+                    android:id="@+id/tv_synopsis_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginLeft="16dp"
+                    android:layout_marginStart="16dp"
+                    android:textSize="24sp"
+                    android:textColor="@color/colorPrimaryText"
+                    android:text="@string/synopsis_title" />
+
+                <TextView
+                    android:id="@+id/tv_synopsis_description"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/tv_synopsis_title"
+                    android:layout_marginLeft="16dp"
+                    android:layout_marginRight="16dp"
+                    android:paddingTop="16dp"
+                    android:paddingBottom="16dp"
+                    android:textSize="14sp"
+                    android:textColor="@color/colorPrimaryText"
+                    tools:text="Fearing the actions of a god-like Super Hero left unchecked, Gotham City’s own formidable, forceful vigilante takes on Metropolis’s most revered, modern-day savior, while the world wrestles with what sort of hero it really needs. And with Batman and Superman at war with one another, a new threat quickly arises, putting mankind in greater danger than it’s ever known before." />
+            </RelativeLayout>
+        </android.support.v7.widget.CardView>
+
+    </LinearLayout>
+
+</ScrollView>
+
+
