@@ -11,8 +11,11 @@
     <string name="content_descriptor_error_image">Error Loading Image</string>
 
     <string name="error_loading_image_toast">The image couldn\'t be loaded</string>
+    <string name="no_data_fetched">No Data Fetched</string>
+    <string name="no_internet">No Internet Connectivity</string>
 
     <string name="vote_average_add_on">/10</string>
 
     <string name="synopsis_title">Synopsis</string>
+
 </resources>

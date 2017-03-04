@@ -1,6 +1,9 @@
 package com.example.android.moviedb;
 
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
@@ -14,6 +17,8 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.android.moviedb.adapter.MovieAdapter;
@@ -33,13 +38,17 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     private RecyclerView mRecyclerView;
     private MovieAdapter mMovieAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
+    private TextView mEmptyView;
+    private ProgressBar mProgressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+        mProgressBar = (ProgressBar) findViewById(R.id.pb_main_ui);
+        mEmptyView = (TextView) findViewById(R.id.tv_empty_view);
+        mRecyclerView = (RecyclerView) findViewById(R.id.rv_main_ui);
         mLayoutManager = new GridLayoutManager(MainActivity.this, 2);
         mRecyclerView.setLayoutManager(mLayoutManager);
 
@@ -50,7 +59,14 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         Bundle loaderBundle = new Bundle();
         loaderBundle.putString(getString(R.string.sort_by), getString(R.string.most_popular));
 
-        getSupportLoaderManager().initLoader(FETCH_MOVIE_ID, loaderBundle, loaderCallback);
+        // if the device is not connected to internet change the text of the empty view
+        if(!isConnectedToInternet()) {
+            mProgressBar.setVisibility(View.GONE);
+            mEmptyView.setText(getString(R.string.no_internet));
+        } else{
+            // Initialise the custom loader
+            getSupportLoaderManager().initLoader(FETCH_MOVIE_ID, loaderBundle, loaderCallback);
+        }
     }
 
     @Override
@@ -79,12 +95,28 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
             case R.id.i_most_popular:
                 Toast.makeText(MainActivity.this, "Most Popular", Toast.LENGTH_SHORT).show();
                 loaderBundle.putString(getString(R.string.sort_by), getString(R.string.most_popular));
-                getSupportLoaderManager().restartLoader(FETCH_MOVIE_ID, loaderBundle, loaderCallback);
+                // if the device is not connected to internet change the text of the empty view
+                if(!isConnectedToInternet()) {
+                    mProgressBar.setVisibility(View.GONE);
+                    mEmptyView.setText(getString(R.string.no_internet));
+                } else{
+                    mProgressBar.setVisibility(View.VISIBLE);
+                    // Initialise the custom loader
+                    getSupportLoaderManager().restartLoader(FETCH_MOVIE_ID, loaderBundle, loaderCallback);
+                }
                 return true;
             case R.id.i_highest_rated:
                 Toast.makeText(MainActivity.this, "Highest Rated", Toast.LENGTH_SHORT).show();
                 loaderBundle.putString(getString(R.string.sort_by), getString(R.string.highest_rated));
-                getSupportLoaderManager().restartLoader(FETCH_MOVIE_ID, loaderBundle, loaderCallback);
+                // if the device is not connected to internet change the text of the empty view
+                if(!isConnectedToInternet()) {
+                    mProgressBar.setVisibility(View.GONE);
+                    mEmptyView.setText(getString(R.string.no_internet));
+                } else{
+                    mProgressBar.setVisibility(View.VISIBLE);
+                    // Initialise the custom loader
+                    getSupportLoaderManager().restartLoader(FETCH_MOVIE_ID, loaderBundle, loaderCallback);
+                }
                 return true;
             default:
                 return false;
@@ -102,6 +134,16 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         popup.setOnMenuItemClickListener(this);
         popup.inflate(R.menu.sortby_menu);
         popup.show();
+    }
+
+    /*
+     * Helper method to check if the device is connected to the internet
+     */
+    public boolean isConnectedToInternet() {
+        ConnectivityManager connectivityManager =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+        return networkInfo != null && networkInfo.isConnected();
     }
 
     @Override
@@ -128,7 +170,12 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
     @Override
     public void onLoadFinished(Loader<List<Results>> loader, List<Results> data) {
-        mMovieAdapter.setMovieData(data);
+        //hide the progress bar
+        mProgressBar.setVisibility(View.GONE);
+        if (data != null && !data.isEmpty())
+            mMovieAdapter.setMovieData(data);
+        else
+            mEmptyView.setText(R.string.no_data_fetched);
     }
 
     @Override
