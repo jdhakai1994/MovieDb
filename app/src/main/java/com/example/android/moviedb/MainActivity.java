@@ -2,6 +2,7 @@ package com.example.android.moviedb;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
@@ -49,7 +50,10 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         mProgressBar = (ProgressBar) findViewById(R.id.pb_main_ui);
         mEmptyView = (TextView) findViewById(R.id.tv_empty_view);
         mRecyclerView = (RecyclerView) findViewById(R.id.rv_main_ui);
-        mLayoutManager = new GridLayoutManager(MainActivity.this, 2);
+        if(getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT)
+            mLayoutManager = new GridLayoutManager(mContext, 2);
+        else
+            mLayoutManager = new GridLayoutManager(mContext, 3);
         mRecyclerView.setLayoutManager(mLayoutManager);
 
         mMovieAdapter = new MovieAdapter(MainActivity.this, this);
