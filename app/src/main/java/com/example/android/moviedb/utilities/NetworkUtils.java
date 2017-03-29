@@ -1,5 +1,9 @@
 package com.example.android.moviedb.utilities;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+
 import java.io.IOException;
 
 import okhttp3.OkHttpClient;
@@ -13,6 +17,18 @@ import okhttp3.Response;
 public class NetworkUtils {
 
     public static final String LOG_TAG = NetworkUtils.class.getSimpleName();
+
+    /**
+     * Helper method to check if the device is connected to the internet
+     * @param context has the context of the calling activity or fragment
+     * @return true if the device is connected to internet else false
+     */
+    public static boolean isConnectedToInternet(Context context) {
+        ConnectivityManager connectivityManager =
+                (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+        return networkInfo != null && networkInfo.isConnected();
+    }
 
     /**
      * Helper Method to fetch movie data using OKHttpClient
@@ -38,6 +54,6 @@ public class NetworkUtils {
         if(jsonData != null)
             return jsonData;
         else
-            return "No Data Fetched";
+            return null;
     }
 }

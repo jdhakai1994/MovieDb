@@ -22,6 +22,8 @@ public class JSONUtils {
      */
     public static List<Results> parseJSON(String response) {
         Gson gson = new GsonBuilder().create();
+        if(response == null)
+            return null;
         TMDBMovieResponse tmdbMovieResponse = gson.fromJson(response, TMDBMovieResponse.class);
         return tmdbMovieResponse.getResults();
     }
