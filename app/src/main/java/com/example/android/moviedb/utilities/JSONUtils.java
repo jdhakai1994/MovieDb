@@ -2,8 +2,10 @@ package com.example.android.moviedb.utilities;
 
 import com.example.android.moviedb.models.MovieListResponse;
 import com.example.android.moviedb.models.MovieReviewResponse;
+import com.example.android.moviedb.models.MovieTrailerResponse;
 import com.example.android.moviedb.models.Result;
 import com.example.android.moviedb.models.Review;
+import com.example.android.moviedb.models.Trailer;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -41,5 +43,18 @@ public class JSONUtils {
             return null;
         MovieReviewResponse reviewListResponse = gson.fromJson(reviewJsonResponse, MovieReviewResponse.class);
         return reviewListResponse.getReviews();
+    }
+
+    /**
+     * Helper Method to parse the JSON response
+     * @param trailerJsonResponse is the JSON response as one complete String
+     * @return the parsed JSON as a ArrayList
+     */
+    public static List<Trailer> parseTrailerJSON(String trailerJsonResponse) {
+        Gson gson = new GsonBuilder().create();
+        if(trailerJsonResponse == null)
+            return null;
+        MovieTrailerResponse trailerListResponse = gson.fromJson(trailerJsonResponse, MovieTrailerResponse.class);
+        return trailerListResponse.getTrailers();
     }
 }

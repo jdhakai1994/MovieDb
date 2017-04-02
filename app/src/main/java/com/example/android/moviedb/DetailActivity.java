@@ -17,6 +17,7 @@ import android.widget.TextView;
 import com.example.android.moviedb.adapter.ReviewAdapter;
 import com.example.android.moviedb.models.Result;
 import com.example.android.moviedb.models.Review;
+import com.example.android.moviedb.models.Trailer;
 import com.example.android.moviedb.utilities.JSONUtils;
 import com.example.android.moviedb.utilities.NetworkUtils;
 import com.example.android.moviedb.utilities.QueryUtils;
@@ -24,10 +25,12 @@ import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
-public class DetailActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<List<Review>>{
+public class DetailActivity extends AppCompatActivity {
 
     private static final String LOG_TAG = DetailActivity.class.getSimpleName();
-    public final int FETCH_REVIEW_ID = 12;
+
+    private static final int FETCH_REVIEW_ID = 12;
+    private static final int FETCH_TRAILER_ID = 13;
 
     private Result mMovie;
     private Context mContext = DetailActivity.this;
@@ -46,31 +49,16 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         mMovie = (Result) getIntent().getSerializableExtra("results");
 
         Log.d(LOG_TAG, mMovie.getId().toString());
+
         hookUpMovieDetailUI();
         hookUpMovieReviewUI();
-    }
-
-    /**
-     * Helper Method to set up the UI elements of the review
-     */
-    private void hookUpMovieReviewUI() {
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.rv_review);
-        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(DetailActivity.this);
-        recyclerView.setLayoutManager(layoutManager);
-        recyclerView.setNestedScrollingEnabled(false);
-
-        mReviewAdapter = new ReviewAdapter(mContext);
-        recyclerView.setAdapter(mReviewAdapter);
-
-        mEmptyViewReview = (TextView) findViewById(R.id.tv_empty_view_review);
-
-        getSupportLoaderManager().initLoader(FETCH_REVIEW_ID, null, DetailActivity.this);
+        hookUpMovieTrailerUI();
     }
 
     /**
      * Helper Method to set up the UI elements of the detail
      */
-    private void hookUpMovieDetailUI(){
+    private void hookUpMovieDetailUI() {
         ImageView backdrop = (ImageView) findViewById(R.id.iv_backdrop);
         String backdropImageUrl = QueryUtils.getBackdropImageUrl(mMovie.getBackdropPath());
         Picasso.with(this)
@@ -102,44 +90,103 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         synopsis.setText(mMovie.getOverview());
     }
 
-    @Override
-    public Loader<List<Review>> onCreateLoader(int id, Bundle args) {
-        return new AsyncTaskLoader<List<Review>>(DetailActivity.this) {
+    /**
+     * Helper Method to set up the UI elements of the review
+     */
+    private void hookUpMovieReviewUI() {
+        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.rv_review);
+        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(DetailActivity.this);
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setNestedScrollingEnabled(false);
 
-            @Override
-            protected void onStartLoading() {
-                forceLoad();
-            }
+        mReviewAdapter = new ReviewAdapter(mContext);
+        recyclerView.setAdapter(mReviewAdapter);
 
-            @Override
-            public List<Review> loadInBackground() {
+        mEmptyViewReview = (TextView) findViewById(R.id.tv_empty_view_review);
 
-                String reviewUrl = QueryUtils.getReviewUrl(mContext, mMovie.getId());
-
-                String reviewJsonResponse = NetworkUtils.makeHTTPRequest(reviewUrl);
-
-                return JSONUtils.parseReviewJSON(reviewJsonResponse);
-            }
-        };
+        getSupportLoaderManager().initLoader(FETCH_REVIEW_ID, null, new ReviewCallback());
     }
 
-    @Override
-    public void onLoadFinished(Loader<List<Review>> loader, List<Review> data) {
-        if (data != null && !data.isEmpty()) {
-            mReviewAdapter.setReviewData(data);
-            mEmptyViewReview.setVisibility(View.GONE);
+    /**
+     * Helper Method to set up the UI elements of the trailer
+     */
+    private void hookUpMovieTrailerUI() {
+        getSupportLoaderManager().initLoader(FETCH_TRAILER_ID, null, new TrailerCallback());
+    }
+
+    private class ReviewCallback implements LoaderManager.LoaderCallbacks<List<Review>> {
+        @Override
+        public Loader<List<Review>> onCreateLoader(int id, Bundle args) {
+            return new AsyncTaskLoader<List<Review>>(DetailActivity.this) {
+
+                @Override
+                protected void onStartLoading() {
+                    forceLoad();
+                }
+
+                @Override
+                public List<Review> loadInBackground() {
+
+                    String reviewUrl = QueryUtils.getReviewUrl(mContext, mMovie.getId());
+
+                    String reviewJsonResponse = NetworkUtils.makeHTTPRequest(reviewUrl);
+
+                    return JSONUtils.parseReviewJSON(reviewJsonResponse);
+                }
+            };
         }
-        else {
-            mReviewAdapter.setReviewData(null);
-            if(!NetworkUtils.isConnectedToInternet(mContext))
-                mEmptyViewReview.setText(R.string.no_internet);
-            else
-                mEmptyViewReview.setText(R.string.no_reviews);
+
+        @Override
+        public void onLoadFinished(Loader<List<Review>> loader, List<Review> data) {
+            if (data != null && !data.isEmpty()) {
+                mReviewAdapter.setReviewData(data);
+                mEmptyViewReview.setVisibility(View.GONE);
+            } else {
+                mReviewAdapter.setReviewData(null);
+                if (!NetworkUtils.isConnectedToInternet(mContext))
+                    mEmptyViewReview.setText(R.string.no_internet);
+                else
+                    mEmptyViewReview.setText(R.string.no_reviews);
+            }
+        }
+
+        @Override
+        public void onLoaderReset(Loader<List<Review>> loader) {
+
         }
     }
 
-    @Override
-    public void onLoaderReset(Loader<List<Review>> loader) {
+    private class TrailerCallback implements LoaderManager.LoaderCallbacks<List<Trailer>> {
 
+        @Override
+        public Loader<List<Trailer>> onCreateLoader(int id, Bundle args) {
+            return new AsyncTaskLoader<List<Trailer>>(DetailActivity.this) {
+
+                @Override
+                protected void onStartLoading() {
+                    forceLoad();
+                }
+
+                @Override
+                public List<Trailer> loadInBackground() {
+
+                    String trailerUrl = QueryUtils.getTrailerUrl(mContext, mMovie.getId());
+
+                    String trailerJsonResponse = NetworkUtils.makeHTTPRequest(trailerUrl);
+
+                    return JSONUtils.parseTrailerJSON(trailerJsonResponse);
+                }
+            };
+        }
+
+        @Override
+        public void onLoadFinished(Loader<List<Trailer>> loader, List<Trailer> data) {
+            Log.d(LOG_TAG, String.valueOf(data.size()));
+        }
+
+        @Override
+        public void onLoaderReset(Loader<List<Trailer>> loader) {
+
+        }
     }
 }

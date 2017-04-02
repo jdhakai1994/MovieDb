@@ -125,7 +125,7 @@ public class QueryUtils {
      * @param id is the moview id
      * @return the final uri in String format
      */
-    public static String getVideoUrl(Context context, Integer id) {
+    public static String getTrailerUrl(Context context, Integer id) {
         Uri.Builder builder = new Uri.Builder();
 
         // sample -> https://api.themoviedb.org/3/movie/278/videos&api_key=****************
