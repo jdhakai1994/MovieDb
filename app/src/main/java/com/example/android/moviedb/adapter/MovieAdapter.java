@@ -8,7 +8,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import com.example.android.moviedb.R;
-import com.example.android.moviedb.models.Results;
+import com.example.android.moviedb.models.Result;
 import com.example.android.moviedb.utilities.QueryUtils;
 import com.squareup.picasso.Picasso;
 
@@ -22,13 +22,13 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder> 
 
     private static final String LOG_TAG = MovieAdapter.class.getSimpleName();
 
-    private List<Results> mDataset;
+    private List<Result> mDataset;
     private Context mContext;
 
     final private GridItemClickListener mOnClickListener;
 
     public interface GridItemClickListener{
-        void onClick(Results object);
+        void onClick(Result object);
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
@@ -44,7 +44,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder> 
         @Override
         public void onClick(View v) {
             int adapterPosition = getAdapterPosition();
-            Results movie = mDataset.get(adapterPosition);
+            Result movie = mDataset.get(adapterPosition);
             mOnClickListener.onClick(movie);
         }
     }
@@ -58,13 +58,12 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder> 
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
 
         View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_grid, parent, false);
-        ViewHolder vh = new ViewHolder(v);
-        return vh;
+        return new ViewHolder(v);
     }
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        final Results object = mDataset.get(position);
+        final Result object = mDataset.get(position);
         String imageUrl = QueryUtils.getPosterImageUrl(object.getPosterPath());
         Picasso.with(mContext).load(imageUrl).into(holder.poster);
     }
@@ -75,7 +74,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder> 
         return mDataset.size();
     }
 
-    public void setMovieData(List<Results> movieList){
+    public void setMovieData(List<Result> movieList){
         mDataset = movieList;
         notifyDataSetChanged();
     }

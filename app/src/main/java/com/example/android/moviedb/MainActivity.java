@@ -21,22 +21,20 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.android.moviedb.adapter.MovieAdapter;
-import com.example.android.moviedb.models.Results;
+import com.example.android.moviedb.models.Result;
 import com.example.android.moviedb.utilities.JSONUtils;
 import com.example.android.moviedb.utilities.NetworkUtils;
 import com.example.android.moviedb.utilities.QueryUtils;
 
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener, LoaderManager.LoaderCallbacks<List<Results>>, MovieAdapter.GridItemClickListener {
+public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener, LoaderManager.LoaderCallbacks<List<Result>>, MovieAdapter.GridItemClickListener {
 
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
-    public final int FETCH_MOVIE_ID = 1;
+    public final int FETCH_MOVIE_ID = 11;
 
-    private RecyclerView mRecyclerView;
     private MovieAdapter mMovieAdapter;
-    private RecyclerView.LayoutManager mLayoutManager;
     private TextView mEmptyView;
     private ProgressBar mProgressBar;
     private Context mContext = MainActivity.this;
@@ -48,18 +46,20 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         setContentView(R.layout.activity_main);
 
         mProgressBar = (ProgressBar) findViewById(R.id.pb_main_ui);
-        mEmptyView = (TextView) findViewById(R.id.tv_empty_view);
-        mRecyclerView = (RecyclerView) findViewById(R.id.rv_main_ui);
+        mEmptyView = (TextView) findViewById(R.id.tv_empty_view_main_ui);
+        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.rv_main_ui);
+        RecyclerView.LayoutManager mLayoutManager;
+
         if(getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT)
             mLayoutManager = new GridLayoutManager(mContext, 2);
         else
             mLayoutManager = new GridLayoutManager(mContext, 3);
-        mRecyclerView.setLayoutManager(mLayoutManager);
+        recyclerView.setLayoutManager(mLayoutManager);
 
         mMovieAdapter = new MovieAdapter(MainActivity.this, this);
-        mRecyclerView.setAdapter(mMovieAdapter);
+        recyclerView.setAdapter(mMovieAdapter);
 
-        LoaderManager.LoaderCallbacks<List<Results>> loaderCallback = MainActivity.this;
+        LoaderManager.LoaderCallbacks<List<Result>> loaderCallback = MainActivity.this;
         Bundle loaderBundle = new Bundle();
         loaderBundle.putString(getString(R.string.sort_by), getString(R.string.most_popular));
 
@@ -93,7 +93,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
     @Override
     public boolean onMenuItemClick(MenuItem item) {
-        LoaderManager.LoaderCallbacks<List<Results>> loaderCallback = MainActivity.this;
+        LoaderManager.LoaderCallbacks<List<Result>> loaderCallback = MainActivity.this;
         Bundle loaderBundle = new Bundle();
         switch (item.getItemId()) {
             case R.id.i_most_popular:
@@ -166,8 +166,8 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     }
 
     @Override
-    public Loader<List<Results>> onCreateLoader(int id, final Bundle args) {
-        return new AsyncTaskLoader<List<Results>>(MainActivity.this) {
+    public Loader<List<Result>> onCreateLoader(int id, final Bundle args) {
+        return new AsyncTaskLoader<List<Result>>(MainActivity.this) {
 
             @Override
             protected void onStartLoading() {
@@ -175,19 +175,19 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
             }
 
             @Override
-            public List<Results> loadInBackground() {
+            public List<Result> loadInBackground() {
 
-                String finalUrl = QueryUtils.getQueryUrl(MainActivity.this, args.getString(getString(R.string.sort_by)));
+                String finalUrl = QueryUtils.getInitialUrl(MainActivity.this, args.getString(getString(R.string.sort_by)));
 
-                String JSONResponse = NetworkUtils.makeHTTPRequest(finalUrl);
+                String moviewListJsonResponse = NetworkUtils.makeHTTPRequest(finalUrl);
 
-                return JSONUtils.parseJSON(JSONResponse);
+                return JSONUtils.parseMovieListJSON(moviewListJsonResponse);
             }
         };
     }
 
     @Override
-    public void onLoadFinished(Loader<List<Results>> loader, List<Results> data) {
+    public void onLoadFinished(Loader<List<Result>> loader, List<Result> data) {
         //hide the progress bar
         mProgressBar.setVisibility(View.GONE);
         if (data != null && !data.isEmpty())
@@ -202,12 +202,12 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     }
 
     @Override
-    public void onLoaderReset(Loader<List<Results>> loader) {
+    public void onLoaderReset(Loader<List<Result>> loader) {
 
     }
 
     @Override
-    public void onClick(Results object) {
+    public void onClick(Result object) {
         Log.d(LOG_TAG, object.getTitle());
         Intent detailIntent = new Intent(MainActivity.this, DetailActivity.class);
         detailIntent.putExtra("results", object);

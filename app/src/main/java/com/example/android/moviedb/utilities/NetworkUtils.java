@@ -18,6 +18,8 @@ public class NetworkUtils {
 
     public static final String LOG_TAG = NetworkUtils.class.getSimpleName();
 
+    private static OkHttpClient client = new OkHttpClient();
+
     /**
      * Helper method to check if the device is connected to the internet
      * @param context has the context of the calling activity or fragment
@@ -36,7 +38,6 @@ public class NetworkUtils {
      * @return the unparsed JSON Response in String format
      */
     public static String makeHTTPRequest(String finalUri){
-        OkHttpClient client = new OkHttpClient();
 
         Request request = new Request.Builder()
                 .url(finalUri)
