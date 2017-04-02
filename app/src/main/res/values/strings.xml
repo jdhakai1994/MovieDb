@@ -21,5 +21,6 @@
     <string name="synopsis_title">Synopsis</string>
     <string name="review_title">Reviews</string>
     <string name="trailer_title">Trailers</string>
+    <string name="read_more_button">Read More</string>
 
 </resources>

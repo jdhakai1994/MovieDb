@@ -14,7 +14,8 @@
         android:layout_marginTop="16dp"
         android:text="@string/review_title"
         android:textColor="@color/colorPrimaryText"
-        android:textSize="24sp" />
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        />
 
     <TextView
         android:id="@+id/tv_empty_view_review"
@@ -22,7 +23,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="8dp"
-        android:textSize="14sp"
+        android:textAppearance="?android:attr/textAppearanceMedium"
         tools:text="@string/no_data_fetched" />
 
     <android.support.v7.widget.RecyclerView

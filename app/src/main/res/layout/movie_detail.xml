@@ -101,8 +101,8 @@
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:text="@string/synopsis_title"
+        android:textAppearance="?android:attr/textAppearanceLarge"
         android:textColor="@color/colorPrimaryText"
-        android:textSize="24sp"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/iv_poster" />
 
@@ -115,7 +115,8 @@
         android:layout_marginRight="16dp"
         android:layout_marginStart="0dp"
         android:layout_marginTop="16dp"
-        android:textSize="14sp"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:textColor="@color/colorSecondaryText"
         app:layout_constraintHorizontal_bias="0.50"
         app:layout_constraintLeft_toLeftOf="@+id/tv_synopsis_title"
         app:layout_constraintRight_toRightOf="parent"
