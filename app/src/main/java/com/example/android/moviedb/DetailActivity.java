@@ -1,6 +1,8 @@
 package com.example.android.moviedb;
 
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
@@ -15,6 +17,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.android.moviedb.adapter.ReviewAdapter;
+import com.example.android.moviedb.adapter.TrailerAdapter;
 import com.example.android.moviedb.models.Result;
 import com.example.android.moviedb.models.Review;
 import com.example.android.moviedb.models.Trailer;
@@ -25,7 +28,7 @@ import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
-public class DetailActivity extends AppCompatActivity {
+public class DetailActivity extends AppCompatActivity implements TrailerAdapter.ListItemClickListener {
 
     private static final String LOG_TAG = DetailActivity.class.getSimpleName();
 
@@ -37,6 +40,8 @@ public class DetailActivity extends AppCompatActivity {
 
     private ReviewAdapter mReviewAdapter;
     private TextView mEmptyViewReview;
+    private TrailerAdapter mTrailerAdapter;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,6 +93,7 @@ public class DetailActivity extends AppCompatActivity {
 
         TextView synopsis = (TextView) findViewById(R.id.tv_synopsis_description);
         synopsis.setText(mMovie.getOverview());
+
     }
 
     /**
@@ -111,7 +117,21 @@ public class DetailActivity extends AppCompatActivity {
      * Helper Method to set up the UI elements of the trailer
      */
     private void hookUpMovieTrailerUI() {
+        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.rv_trailer);
+        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(DetailActivity.this, LinearLayoutManager.HORIZONTAL, false);
+        recyclerView.setLayoutManager(layoutManager);
+        //recyclerView.setNestedScrollingEnabled(false);
+
+        mTrailerAdapter = new TrailerAdapter(mContext, this);
+        recyclerView.setAdapter(mTrailerAdapter);
+
         getSupportLoaderManager().initLoader(FETCH_TRAILER_ID, null, new TrailerCallback());
+    }
+
+    @Override
+    public void onClick(Trailer object) {
+        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(QueryUtils.getYouTubeUrl(object.getKey())));
+        startActivity(browserIntent);
     }
 
     private class ReviewCallback implements LoaderManager.LoaderCallbacks<List<Review>> {
@@ -181,7 +201,8 @@ public class DetailActivity extends AppCompatActivity {
 
         @Override
         public void onLoadFinished(Loader<List<Trailer>> loader, List<Trailer> data) {
-            Log.d(LOG_TAG, String.valueOf(data.size()));
+            if (data != null && !data.isEmpty())
+                mTrailerAdapter.setTrailerData(data);
         }
 
         @Override

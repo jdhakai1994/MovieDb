@@ -6,29 +6,21 @@
     android:orientation="vertical">
 
     <TextView
-        android:id="@+id/tv_review_title"
+        android:id="@+id/tv_trailer_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="16dp"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
-        android:text="@string/review_title"
+        android:layout_marginTop="16dp"
+        android:text="@string/trailer_title"
         android:textColor="@color/colorPrimaryText"
         android:textAppearance="?android:attr/textAppearanceLarge"
         />
 
-    <TextView
-        android:id="@+id/tv_empty_view_review"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="8dp"
-        android:textAppearance="?android:attr/textAppearanceMedium"
-        tools:text="@string/no_data_fetched" />
-
     <android.support.v7.widget.RecyclerView
-        android:id="@+id/rv_review"
+        android:id="@+id/rv_trailer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:scrollbars="vertical" />
+        android:scrollbars="horizontal" />
+
 </LinearLayout>

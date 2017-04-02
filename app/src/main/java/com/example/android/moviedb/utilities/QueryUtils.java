@@ -33,6 +33,16 @@ public class QueryUtils {
     private static final String IMAGE_SIZE_DETAIL = "w185";
     private static final String IMAGE_BASE_URI = "https://image.tmdb.org/t/p";
 
+
+    private static final String YOUTUBE_IMAGE_AUTHORITY = "i.ytimg.com";
+    private static final String YOUTUBE_VIEW_AUTHORITY = "www.youtube.com";
+
+    private static final String YOUTUBE_IMAGE_PATH = "vi";
+    private static final String YOUTUBE_IMAGE_SIZE_PATH = "hqdefault.jpg";
+    private static final String YOUTUBE_VIDEO_PATH = "watch";
+
+    private static final String YOUTUBE_VIDEO_QUERY_PARAMETER = "v";
+
     /**
      * Helper Method to build a uri based on sort option
      *
@@ -136,6 +146,39 @@ public class QueryUtils {
                 .appendPath(id.toString())
                 .appendPath(VIDEO_PATH)
                 .appendQueryParameter(API_QUERY_PARAMETER, API_KEY_CONSTANT);
+
+        return builder.build().toString();
+    }
+
+    /**
+     * Helper Method to build a url to fetch video based on movie id
+     *
+     * @param key is the unique key representing resource in YouTube API
+     * @return the final uri in String format
+     */
+    public static String getVideoImageUrl(String key) {
+
+        Uri.Builder builder = new Uri.Builder();
+
+        // sample -> https://img.youtube.com/vi/EZ-zFwuR0FY/default.jpg
+        builder.scheme(SCHEME)
+                .authority(YOUTUBE_IMAGE_AUTHORITY)
+                .appendPath(YOUTUBE_IMAGE_PATH)
+                .appendPath(key)
+                .appendPath(YOUTUBE_IMAGE_SIZE_PATH);
+
+        return builder.build().toString();
+    }
+
+    public static String getYouTubeUrl(String key) {
+
+        Uri.Builder builder = new Uri.Builder();
+
+        //sample -> https://www.youtube.com/watch?v=EZ-zFwuR0FY
+        builder.scheme(SCHEME)
+                .authority(YOUTUBE_VIEW_AUTHORITY)
+                .appendPath(YOUTUBE_VIDEO_PATH)
+                .appendQueryParameter(YOUTUBE_VIDEO_QUERY_PARAMETER, key);
 
         return builder.build().toString();
     }

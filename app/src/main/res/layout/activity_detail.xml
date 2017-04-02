@@ -16,6 +16,12 @@
             android:layout_height="wrap_content" />
 
         <include
+            android:id="@+id/movie_trailer"
+            layout="@layout/movie_trailer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <include
             android:id="@+id/movie_review"
             layout="@layout/movie_review"
             android:layout_width="match_parent"
