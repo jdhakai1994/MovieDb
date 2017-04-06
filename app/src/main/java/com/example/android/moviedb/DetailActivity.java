@@ -1,7 +1,10 @@
 package com.example.android.moviedb;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.LoaderManager;
@@ -18,9 +21,11 @@ import android.widget.TextView;
 
 import com.example.android.moviedb.adapter.ReviewAdapter;
 import com.example.android.moviedb.adapter.TrailerAdapter;
+import com.example.android.moviedb.data.MovieContract;
 import com.example.android.moviedb.models.Result;
 import com.example.android.moviedb.models.Review;
 import com.example.android.moviedb.models.Trailer;
+import com.example.android.moviedb.utilities.ImageUtils;
 import com.example.android.moviedb.utilities.JSONUtils;
 import com.example.android.moviedb.utilities.NetworkUtils;
 import com.example.android.moviedb.utilities.QueryUtils;
@@ -32,8 +37,8 @@ public class DetailActivity extends AppCompatActivity implements TrailerAdapter.
 
     private static final String LOG_TAG = DetailActivity.class.getSimpleName();
 
-    private static final int FETCH_REVIEW_ID = 12;
-    private static final int FETCH_TRAILER_ID = 13;
+    private static final int FETCH_REVIEW_FROM_INTERNET_ID = 12;
+    private static final int FETCH_TRAILER_FROM_INTERNET_ID = 13;
 
     private Result mMovie;
     private Context mContext = DetailActivity.this;
@@ -41,7 +46,6 @@ public class DetailActivity extends AppCompatActivity implements TrailerAdapter.
     private ReviewAdapter mReviewAdapter;
     private TextView mEmptyViewReview;
     private TrailerAdapter mTrailerAdapter;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,19 +68,26 @@ public class DetailActivity extends AppCompatActivity implements TrailerAdapter.
      * Helper Method to set up the UI elements of the detail
      */
     private void hookUpMovieDetailUI() {
-        ImageView backdrop = (ImageView) findViewById(R.id.iv_backdrop);
-        String backdropImageUrl = QueryUtils.getBackdropImageUrl(mMovie.getBackdropPath());
-        Picasso.with(this)
-                .load(backdropImageUrl)
-                .error(R.drawable.image_error)
-                .into(backdrop);
 
-        ImageView poster = (ImageView) findViewById(R.id.iv_poster);
-        String posterImageUrl = QueryUtils.getPosterImageUrlDetail(mMovie.getPosterPath());
-        Picasso.with(this)
-                .load(posterImageUrl)
-                .error(R.drawable.image_error)
-                .into(poster);
+        final ImageView backdrop = (ImageView) findViewById(R.id.iv_backdrop);
+        if (mMovie.getBackdropImage() == null) {
+            String backdropImageUrl = QueryUtils.getBackdropImageUrl(mMovie.getBackdropPath());
+            Picasso.with(this)
+                    .load(backdropImageUrl)
+                    .error(R.drawable.image_error)
+                    .into(backdrop);
+        } else
+            backdrop.setImageBitmap(ImageUtils.getImage(mMovie.getBackdropImage()));
+
+        final ImageView poster = (ImageView) findViewById(R.id.iv_poster);
+        if (mMovie.getPosterImage() == null) {
+            String posterImageUrl = QueryUtils.getPosterImageUrlDetail(mMovie.getPosterPath());
+            Picasso.with(this)
+                    .load(posterImageUrl)
+                    .error(R.drawable.image_error)
+                    .into(poster);
+        } else
+            poster.setImageBitmap(ImageUtils.getImage(mMovie.getPosterImage()));
 
         TextView title = (TextView) findViewById(R.id.tv_title);
         title.setText(mMovie.getTitle());
@@ -94,6 +105,32 @@ public class DetailActivity extends AppCompatActivity implements TrailerAdapter.
         TextView synopsis = (TextView) findViewById(R.id.tv_synopsis_description);
         synopsis.setText(mMovie.getOverview());
 
+        final ImageView favourite = (ImageView) findViewById(R.id.iv_favourite);
+        favourite.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                ContentValues contentValues = getInputSet();
+                Uri uri = getContentResolver().insert(MovieContract.FavouriteEntry.CONTENT_URI, contentValues);
+                Log.d(LOG_TAG, uri.toString());
+            }
+
+            private ContentValues getInputSet() {
+
+                Bitmap posterBitmap = ((BitmapDrawable) poster.getDrawable()).getBitmap();
+                Bitmap backdropBitmap = ((BitmapDrawable) backdrop.getDrawable()).getBitmap();
+
+                ContentValues contentValues = new ContentValues();
+                contentValues.put(MovieContract.FavouriteEntry.COLUMN_TITLE, mMovie.getTitle());
+                contentValues.put(MovieContract.FavouriteEntry.COLUMN_MOVIE_ID, mMovie.getId());
+                contentValues.put(MovieContract.FavouriteEntry.COLUMN_SYNOPSIS, mMovie.getOverview());
+                contentValues.put(MovieContract.FavouriteEntry.COLUMN_USER_RATING, mMovie.getVoteAverage());
+                contentValues.put(MovieContract.FavouriteEntry.COLUMN_RELEASE_DATE, mMovie.getReleaseDate());
+                contentValues.put(MovieContract.FavouriteEntry.COLUMN_POSTER, ImageUtils.getImageBytes(posterBitmap));
+                contentValues.put(MovieContract.FavouriteEntry.COLUMN_BACKDROP, ImageUtils.getImageBytes(backdropBitmap));
+                return contentValues;
+            }
+        });
     }
 
     /**
@@ -110,7 +147,7 @@ public class DetailActivity extends AppCompatActivity implements TrailerAdapter.
 
         mEmptyViewReview = (TextView) findViewById(R.id.tv_empty_view_review);
 
-        getSupportLoaderManager().initLoader(FETCH_REVIEW_ID, null, new ReviewCallback());
+        getSupportLoaderManager().initLoader(FETCH_REVIEW_FROM_INTERNET_ID, null, new ReviewCallback());
     }
 
     /**
@@ -120,12 +157,11 @@ public class DetailActivity extends AppCompatActivity implements TrailerAdapter.
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.rv_trailer);
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(DetailActivity.this, LinearLayoutManager.HORIZONTAL, false);
         recyclerView.setLayoutManager(layoutManager);
-        //recyclerView.setNestedScrollingEnabled(false);
 
         mTrailerAdapter = new TrailerAdapter(mContext, this);
         recyclerView.setAdapter(mTrailerAdapter);
 
-        getSupportLoaderManager().initLoader(FETCH_TRAILER_ID, null, new TrailerCallback());
+        getSupportLoaderManager().initLoader(FETCH_TRAILER_FROM_INTERNET_ID, null, new TrailerCallback());
     }
 
     @Override
@@ -210,4 +246,5 @@ public class DetailActivity extends AppCompatActivity implements TrailerAdapter.
 
         }
     }
+
 }

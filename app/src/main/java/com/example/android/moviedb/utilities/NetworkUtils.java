@@ -1,6 +1,8 @@
 package com.example.android.moviedb.utilities;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
@@ -22,6 +24,7 @@ public class NetworkUtils {
 
     /**
      * Helper method to check if the device is connected to the internet
+     *
      * @param context has the context of the calling activity or fragment
      * @return true if the device is connected to internet else false
      */
@@ -34,26 +37,63 @@ public class NetworkUtils {
 
     /**
      * Helper Method to fetch movie data using OKHttpClient
-     * @param finalUri is the url to be hit in String format
+     *
+     * @param finalUrl is the url to be hit in String format
      * @return the unparsed JSON Response in String format
      */
-    public static String makeHTTPRequest(String finalUri){
+    public static String makeHTTPRequest(String finalUrl) {
 
         Request request = new Request.Builder()
-                .url(finalUri)
+                .url(finalUrl)
                 .build();
 
         String jsonData = null;
         try {
             Response response = client.newCall(request).execute();
-            if(response.isSuccessful())
+            if (response.isSuccessful())
                 jsonData = response.body().string();
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        if(jsonData != null)
+        if (jsonData != null)
             return jsonData;
+        else
+            return null;
+    }
+/*
+    public static Bitmap getBitmapFromURL(String src) {
+        try {
+            URL url = new URL(src);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setDoInput(true);
+            connection.connect();
+            InputStream input = connection.getInputStream();
+            Bitmap myBitmap = BitmapFactory.decodeStream(input);
+            return myBitmap;
+        } catch (IOException e) {
+            // Log exception
+            return null;
+        }
+    }
+*/
+    public static Bitmap getBitmapFromURL(String imageUrl) {
+
+        Request request = new Request.Builder()
+                .url(imageUrl)
+                .build();
+
+        Bitmap bitmap = null;
+        try {
+            Response response = client.newCall(request).execute();
+            if (response.isSuccessful())
+                bitmap = BitmapFactory.decodeStream(response.body().byteStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (bitmap != null)
+            return bitmap;
         else
             return null;
     }

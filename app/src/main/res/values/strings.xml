@@ -4,6 +4,7 @@
 
     <string name="most_popular">Most Popular</string>
     <string name="highest_rated">Highest Rated</string>
+    <string name="favourite">Favourite</string>
     <string name="sort_by">Sort By</string>
 
     <string name="content_descriptor_poster">Poster</string>

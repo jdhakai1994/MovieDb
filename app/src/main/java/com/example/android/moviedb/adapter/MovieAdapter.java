@@ -9,6 +9,7 @@ import android.widget.ImageView;
 
 import com.example.android.moviedb.R;
 import com.example.android.moviedb.models.Result;
+import com.example.android.moviedb.utilities.ImageUtils;
 import com.example.android.moviedb.utilities.QueryUtils;
 import com.squareup.picasso.Picasso;
 
@@ -27,7 +28,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder> 
 
     final private GridItemClickListener mOnClickListener;
 
-    public interface GridItemClickListener{
+    public interface GridItemClickListener {
         void onClick(Result object);
     }
 
@@ -56,7 +57,6 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder> 
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-
         View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.grid_item_poster, parent, false);
         return new ViewHolder(v);
     }
@@ -64,17 +64,21 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder> 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         final Result object = mDataset.get(position);
-        String imageUrl = QueryUtils.getPosterImageUrl(object.getPosterPath());
-        Picasso.with(mContext).load(imageUrl).into(holder.poster);
+        if(object.getPosterImage() == null) {
+            String imageUrl = QueryUtils.getPosterImageUrl(object.getPosterPath());
+            Picasso.with(mContext).load(imageUrl).into(holder.poster);
+        }else{
+            holder.poster.setImageBitmap(ImageUtils.getImage(object.getPosterImage()));
+        }
     }
 
     @Override
     public int getItemCount() {
         if (null == mDataset) return 0;
-        return mDataset.size();
+            return mDataset.size();
     }
 
-    public void setMovieData(List<Result> movieList){
+    public void setMovieData(List<Result> movieList) {
         mDataset = movieList;
         notifyDataSetChanged();
     }

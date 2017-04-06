@@ -3,14 +3,17 @@ package com.example.android.moviedb;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -20,24 +23,37 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.android.moviedb.adapter.MovieAdapter;
+import com.example.android.moviedb.data.MovieContract;
 import com.example.android.moviedb.models.Result;
 import com.example.android.moviedb.utilities.JSONUtils;
 import com.example.android.moviedb.utilities.NetworkUtils;
 import com.example.android.moviedb.utilities.QueryUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener, LoaderManager.LoaderCallbacks<List<Result>>, MovieAdapter.GridItemClickListener {
+public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener, MovieAdapter.GridItemClickListener {
 
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
-    public final int FETCH_MOVIE_ID = 11;
+    private static final int FETCH_MOVIE_FROM_INTERNET_ID = 11;
+    private static final int FETCH_MOVIE_FROM_DB_ID = 21;
 
     private MovieAdapter mMovieAdapter;
     private TextView mEmptyView;
     private ProgressBar mProgressBar;
     private Context mContext = MainActivity.this;
     private Toast mToast;
+
+    public static final String mProjection[] = {MovieContract.FavouriteEntry._ID, MovieContract.FavouriteEntry.COLUMN_TITLE, MovieContract.FavouriteEntry.COLUMN_MOVIE_ID, MovieContract.FavouriteEntry.COLUMN_RELEASE_DATE, MovieContract.FavouriteEntry.COLUMN_USER_RATING, MovieContract.FavouriteEntry.COLUMN_SYNOPSIS, MovieContract.FavouriteEntry.COLUMN_POSTER, MovieContract.FavouriteEntry.COLUMN_BACKDROP};
+
+    public static final int INDEX_MOVIE_TITLE = 1;
+    public static final int INDEX_MOVIE_ID = 2;
+    public static final int INDEX_MOVIE_RELEASE_DATE = 3;
+    public static final int INDEX_MOVIE_USER_RATING = 4;
+    public static final int INDEX_MOVIE_SYNOPSIS = 5;
+    public static final int INDEX_MOVIE_POSTER = 6;
+    public static final int INDEX_MOVIE_BACKDROP = 7;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,7 +65,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.rv_main_ui);
         RecyclerView.LayoutManager mLayoutManager;
 
-        if(getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT)
+        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT)
             mLayoutManager = new GridLayoutManager(mContext, 2);
         else
             mLayoutManager = new GridLayoutManager(mContext, 3);
@@ -58,7 +74,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         mMovieAdapter = new MovieAdapter(MainActivity.this, this);
         recyclerView.setAdapter(mMovieAdapter);
 
-        LoaderManager.LoaderCallbacks<List<Result>> loaderCallback = MainActivity.this;
         Bundle loaderBundle = new Bundle();
         loaderBundle.putString(getString(R.string.sort_by), getString(R.string.most_popular));
 
@@ -68,7 +83,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         else {
             showFetchingDataUI();
             // Initialise the custom loader
-            getSupportLoaderManager().initLoader(FETCH_MOVIE_ID, loaderBundle, loaderCallback);
+            getSupportLoaderManager().initLoader(FETCH_MOVIE_FROM_INTERNET_ID, loaderBundle, new ResultCallback());
         }
     }
 
@@ -92,7 +107,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
     @Override
     public boolean onMenuItemClick(MenuItem item) {
-        LoaderManager.LoaderCallbacks<List<Result>> loaderCallback = MainActivity.this;
         Bundle loaderBundle = new Bundle();
         switch (item.getItemId()) {
             case R.id.i_most_popular:
@@ -108,7 +122,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                 else {
                     showFetchingDataUI();
                     // Initialise the custom loader
-                    getSupportLoaderManager().restartLoader(FETCH_MOVIE_ID, loaderBundle, loaderCallback);
+                    getSupportLoaderManager().restartLoader(FETCH_MOVIE_FROM_INTERNET_ID, loaderBundle, new ResultCallback());
                 }
                 return true;
             case R.id.i_highest_rated:
@@ -123,8 +137,16 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                 else {
                     showFetchingDataUI();
                     // Initialise the custom loader
-                    getSupportLoaderManager().restartLoader(FETCH_MOVIE_ID, loaderBundle, loaderCallback);
+                    getSupportLoaderManager().restartLoader(FETCH_MOVIE_FROM_INTERNET_ID, loaderBundle, new ResultCallback());
                 }
+                return true;
+            case R.id.i_favourite:
+                if (mToast != null)
+                    mToast.cancel();
+                mToast = Toast.makeText(mContext, "Fetching your Favourite Movies", Toast.LENGTH_SHORT);
+                mToast.show();
+                showFetchingDataUI();
+                getSupportLoaderManager().initLoader(FETCH_MOVIE_FROM_DB_ID, null, new CursorCallback());
                 return true;
             default:
                 return false;
@@ -164,45 +186,89 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         mEmptyView.setText("");
     }
 
-    @Override
-    public Loader<List<Result>> onCreateLoader(int id, final Bundle args) {
-        return new AsyncTaskLoader<List<Result>>(MainActivity.this) {
+    private class ResultCallback implements LoaderManager.LoaderCallbacks<List<Result>> {
+        @Override
+        public Loader<List<Result>> onCreateLoader(int id, final Bundle args) {
+            return new AsyncTaskLoader<List<Result>>(MainActivity.this) {
 
-            @Override
-            protected void onStartLoading() {
+                @Override
+                protected void onStartLoading() {
                     forceLoad();
+                }
+
+                @Override
+                public List<Result> loadInBackground() {
+
+                    String finalUrl = QueryUtils.getInitialUrl(MainActivity.this, args.getString(getString(R.string.sort_by)));
+
+                    String moviewListJsonResponse = NetworkUtils.makeHTTPRequest(finalUrl);
+
+                    return JSONUtils.parseMovieListJSON(moviewListJsonResponse);
+                }
+            };
+        }
+
+        @Override
+        public void onLoadFinished(Loader<List<Result>> loader, List<Result> data) {
+            //hide the progress bar
+            mProgressBar.setVisibility(View.GONE);
+            if (data != null && !data.isEmpty())
+                mMovieAdapter.setMovieData(data);
+            else {
+                mMovieAdapter.setMovieData(null);
+                if (!NetworkUtils.isConnectedToInternet(mContext))
+                    mEmptyView.setText(R.string.no_internet);
+                else
+                    mEmptyView.setText(R.string.no_data_fetched);
             }
+        }
 
-            @Override
-            public List<Result> loadInBackground() {
+        @Override
+        public void onLoaderReset(Loader<List<Result>> loader) {
 
-                String finalUrl = QueryUtils.getInitialUrl(MainActivity.this, args.getString(getString(R.string.sort_by)));
-
-                String moviewListJsonResponse = NetworkUtils.makeHTTPRequest(finalUrl);
-
-                return JSONUtils.parseMovieListJSON(moviewListJsonResponse);
-            }
-        };
-    }
-
-    @Override
-    public void onLoadFinished(Loader<List<Result>> loader, List<Result> data) {
-        //hide the progress bar
-        mProgressBar.setVisibility(View.GONE);
-        if (data != null && !data.isEmpty())
-            mMovieAdapter.setMovieData(data);
-        else {
-            mMovieAdapter.setMovieData(null);
-            if(!NetworkUtils.isConnectedToInternet(mContext))
-                mEmptyView.setText(R.string.no_internet);
-            else
-                mEmptyView.setText(R.string.no_data_fetched);
         }
     }
 
-    @Override
-    public void onLoaderReset(Loader<List<Result>> loader) {
+    private class CursorCallback implements LoaderManager.LoaderCallbacks<Cursor> {
 
+        @Override
+        public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+            Log.d(LOG_TAG, String.valueOf(id));
+            switch (id) {
+                case FETCH_MOVIE_FROM_DB_ID:
+                    return new CursorLoader(mContext, MovieContract.FavouriteEntry.CONTENT_URI, mProjection, null, null, null);
+                default:
+                    return null;
+            }
+        }
+
+        @Override
+        public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+            Log.d(LOG_TAG, "In onLoadFinished: " + loader.getId());
+
+            List<Result> movieList = new ArrayList<>();
+            data.moveToFirst();
+            while (data.moveToNext()) {
+                int id = data.getInt(INDEX_MOVIE_ID);
+                String title = data.getString(INDEX_MOVIE_TITLE);
+                String synopsis = data.getString(INDEX_MOVIE_SYNOPSIS);
+                String releaseDate = data.getString(INDEX_MOVIE_RELEASE_DATE);
+                Double userRating = data.getDouble(INDEX_MOVIE_USER_RATING);
+                byte[] posterImage = data.getBlob(INDEX_MOVIE_POSTER);
+                byte[] backdropImage = data.getBlob(INDEX_MOVIE_BACKDROP);
+
+                Result movie = new Result(id, title, synopsis, releaseDate, userRating, posterImage, backdropImage);
+                movie.setFavourite(true);
+                movieList.add(movie);
+            }
+            mProgressBar.setVisibility(View.GONE);
+            mMovieAdapter.setMovieData(movieList);
+        }
+
+        @Override
+        public void onLoaderReset(Loader<Cursor> loader) {
+
+        }
     }
 
     @Override

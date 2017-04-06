@@ -5,8 +5,7 @@ import com.google.gson.annotations.SerializedName;
 
 import java.io.Serializable;
 
-
-public class Result implements Serializable{
+public class Result implements Serializable {
 
     @SerializedName("poster_path")
     @Expose
@@ -29,6 +28,19 @@ public class Result implements Serializable{
     @SerializedName("vote_average")
     @Expose
     private Double voteAverage;
+    private Boolean favourite;
+    private byte[] posterImage;
+    private byte[] backdropImage;
+
+    public Result(Integer id, String title, String overview, String releaseDate, Double voteAverage, byte[] posterImage, byte[] backdropImage) {
+        this.overview = overview;
+        this.releaseDate = releaseDate;
+        this.id = id;
+        this.title = title;
+        this.voteAverage = voteAverage;
+        this.posterImage = posterImage;
+        this.backdropImage = backdropImage;
+    }
 
     public String getPosterPath() {
         return posterPath;
@@ -86,4 +98,27 @@ public class Result implements Serializable{
         this.voteAverage = voteAverage;
     }
 
+    public Boolean getFavourite() {
+        return favourite;
+    }
+
+    public void setFavourite(Boolean favourite) {
+        this.favourite = favourite;
+    }
+
+    public byte[] getPosterImage() {
+        return posterImage;
+    }
+
+    public void setPosterImage(byte[] posterImage) {
+        this.posterImage = posterImage;
+    }
+
+    public byte[] getBackdropImage() {
+        return backdropImage;
+    }
+
+    public void setBackdropImage(byte[] backdropImage) {
+        this.backdropImage = backdropImage;
+    }
 }
