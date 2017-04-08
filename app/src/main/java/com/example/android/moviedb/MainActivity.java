@@ -28,6 +28,7 @@ import com.example.android.moviedb.models.Result;
 import com.example.android.moviedb.utilities.JSONUtils;
 import com.example.android.moviedb.utilities.NetworkUtils;
 import com.example.android.moviedb.utilities.QueryUtils;
+import com.facebook.stetho.Stetho;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,7 +59,25 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Create an InitializerBuilder
+        Stetho.InitializerBuilder initializerBuilder =
+                Stetho.newInitializerBuilder(this);
+
+// Enable Chrome DevTools
+        initializerBuilder.enableWebKitInspector(
+                Stetho.defaultInspectorModulesProvider(this)
+        );
+
+// Use the InitializerBuilder to generate an Initializer
+        Stetho.Initializer initializer = initializerBuilder.build();
+
+// Initialize Stetho with the Initializer
+        Stetho.initialize(initializer);
+
         setContentView(R.layout.activity_main);
+
+        Log.d(LOG_TAG, "In onCreate():");
 
         mProgressBar = (ProgressBar) findViewById(R.id.pb_main_ui);
         mEmptyView = (TextView) findViewById(R.id.tv_empty_view_main_ui);
@@ -89,6 +108,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        Log.d(LOG_TAG, "In onCreateOptionsMenu():");
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_main, menu);
         return true;
@@ -96,6 +116,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        Log.d(LOG_TAG, "In onOptionsItemSelected():");
         switch (item.getItemId()) {
             case R.id.i_sort_by:
                 showMenu(findViewById(R.id.i_sort_by));
@@ -107,6 +128,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
     @Override
     public boolean onMenuItemClick(MenuItem item) {
+        Log.d(LOG_TAG, "In onMenuItemClick():");
         Bundle loaderBundle = new Bundle();
         switch (item.getItemId()) {
             case R.id.i_most_popular:
@@ -159,6 +181,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
      * @param v is the view to which the pop-up will be attached
      */
     public void showMenu(View v) {
+        Log.d(LOG_TAG, "In showMenu():");
         PopupMenu popup = new PopupMenu(MainActivity.this, v);
 
         // This activity implements OnMenuItemClickListener
@@ -171,6 +194,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
      * Helper Method to display the UI when there is no internet connectivity
      */
     public void showNoInternetUI() {
+        Log.d(LOG_TAG, "In showNoInternetUI():");
         mProgressBar.setVisibility(View.GONE);
         mMovieAdapter.setMovieData(null);
         mEmptyView.setText(getString(R.string.no_internet));
@@ -181,14 +205,20 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
      * important in slow internet connection
      */
     public void showFetchingDataUI() {
+        Log.d(LOG_TAG, "In showFetchingDataUI():");
         mProgressBar.setVisibility(View.VISIBLE);
         mMovieAdapter.setMovieData(null);
         mEmptyView.setText("");
     }
 
+    /**
+     * Inner Class representing the callback from the loader used to setup the
+     * main ui section when most_popular/top_rated option is selected
+     */
     private class ResultCallback implements LoaderManager.LoaderCallbacks<List<Result>> {
         @Override
         public Loader<List<Result>> onCreateLoader(int id, final Bundle args) {
+            Log.d(LOG_TAG, "In onCreate():" + id);
             return new AsyncTaskLoader<List<Result>>(MainActivity.this) {
 
                 @Override
@@ -210,6 +240,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
         @Override
         public void onLoadFinished(Loader<List<Result>> loader, List<Result> data) {
+            Log.d(LOG_TAG, "In onLoadFinished():" + loader.getId());
             //hide the progress bar
             mProgressBar.setVisibility(View.GONE);
             if (data != null && !data.isEmpty())
@@ -229,11 +260,15 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         }
     }
 
+    /**
+     * Inner Class representing the callback from the loader used to setup the
+     * main ui section when favourites option is selected
+     */
     private class CursorCallback implements LoaderManager.LoaderCallbacks<Cursor> {
 
         @Override
         public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-            Log.d(LOG_TAG, String.valueOf(id));
+            Log.d(LOG_TAG, "In onCreateLoader():" + id);
             switch (id) {
                 case FETCH_MOVIE_FROM_DB_ID:
                     return new CursorLoader(mContext, MovieContract.FavouriteEntry.CONTENT_URI, mProjection, null, null, null);
@@ -244,23 +279,23 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
         @Override
         public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-            Log.d(LOG_TAG, "In onLoadFinished: " + loader.getId());
-
+            Log.d(LOG_TAG, "In onLoadFinished():" + loader.getId());
             List<Result> movieList = new ArrayList<>();
-            data.moveToFirst();
-            while (data.moveToNext()) {
-                int id = data.getInt(INDEX_MOVIE_ID);
-                String title = data.getString(INDEX_MOVIE_TITLE);
-                String synopsis = data.getString(INDEX_MOVIE_SYNOPSIS);
-                String releaseDate = data.getString(INDEX_MOVIE_RELEASE_DATE);
-                Double userRating = data.getDouble(INDEX_MOVIE_USER_RATING);
-                byte[] posterImage = data.getBlob(INDEX_MOVIE_POSTER);
-                byte[] backdropImage = data.getBlob(INDEX_MOVIE_BACKDROP);
+            if (data.moveToFirst()) {
+                do {
+                    int id = data.getInt(INDEX_MOVIE_ID);
+                    String title = data.getString(INDEX_MOVIE_TITLE);
+                    String synopsis = data.getString(INDEX_MOVIE_SYNOPSIS);
+                    String releaseDate = data.getString(INDEX_MOVIE_RELEASE_DATE);
+                    Double userRating = data.getDouble(INDEX_MOVIE_USER_RATING);
+                    byte[] posterImage = data.getBlob(INDEX_MOVIE_POSTER);
+                    byte[] backdropImage = data.getBlob(INDEX_MOVIE_BACKDROP);
 
-                Result movie = new Result(id, title, synopsis, releaseDate, userRating, posterImage, backdropImage);
-                movie.setFavourite(true);
-                movieList.add(movie);
+                    Result movie = new Result(id, title, synopsis, releaseDate, userRating, posterImage, backdropImage);
+                    movieList.add(movie);
+                } while (data.moveToNext());
             }
+            data.close();
             mProgressBar.setVisibility(View.GONE);
             mMovieAdapter.setMovieData(movieList);
         }
@@ -271,8 +306,13 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         }
     }
 
+    /**
+     * Function to launch the detail activity
+     * @param object
+     */
     @Override
     public void onClick(Result object) {
+        Log.d(LOG_TAG, "In onClick(Result):");
         Intent detailIntent = new Intent(MainActivity.this, DetailActivity.class);
         detailIntent.putExtra("results", object);
         startActivity(detailIntent);

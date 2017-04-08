@@ -15,6 +15,10 @@
     <string name="no_data_fetched">No Data Fetched.</string>
     <string name="no_internet">No Internet Connectivity.</string>
     <string name="no_reviews">No Reviews Available.</string>
+    <string name="add_favourites_success">Added to Favorites</string>
+    <string name="remove_favourites_success">Removed from Favorites</string>
+    <string name="add_favourites_failure">Couldn\'t be added to Favorites</string>
+    <string name="remove_favourites_failure">Couldn\'t be removed from Favorites</string>
 
     <string name="vote_average_add_on">/10</string>
     <string name="author_add_on">By</string>
