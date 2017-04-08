@@ -90,7 +90,6 @@ public class MovieProvider extends ContentProvider {
 
         switch (sUriMatcher.match(uri)) {
             case CODE_FAVOURITE:
-                Log.d(LOG_TAG, String.valueOf(CODE_FAVOURITE));
                 rowId = db.insert(MovieContract.FavouriteEntry.TABLE_NAME, null, values);
                 break;
             case CODE_FAVOURITE_WITH_MOVIE_ID:

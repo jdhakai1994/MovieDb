@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.databinding.DataBindingUtil;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
@@ -16,13 +17,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
-import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.android.moviedb.adapter.ReviewAdapter;
 import com.example.android.moviedb.adapter.TrailerAdapter;
 import com.example.android.moviedb.data.MovieContract;
+import com.example.android.moviedb.databinding.ActivityDetailBinding;
 import com.example.android.moviedb.models.Result;
 import com.example.android.moviedb.models.Review;
 import com.example.android.moviedb.models.Trailer;
@@ -45,17 +45,15 @@ public class DetailActivity extends AppCompatActivity implements TrailerAdapter.
     private static final int FETCH_TRAILER_FROM_INTERNET_ID = 13;
     private static final int FETCH_MOVIE_FROM_DB_ID = 22;
 
-    private Result mMovie;
     private Context mContext = DetailActivity.this;
+    private Result mMovie;
+
     private Toast mToast;
 
     private ReviewAdapter mReviewAdapter;
     private TrailerAdapter mTrailerAdapter;
 
-    private TextView mEmptyViewReview;
-
-    private ImageView mPoster;
-    private ImageView mBackdrop;
+    private ActivityDetailBinding mDetailBinding;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,8 +75,7 @@ public class DetailActivity extends AppCompatActivity implements TrailerAdapter.
         Stetho.initialize(initializer);
 
         //requestWindowFeature(Window.FEATURE_NO_TITLE);
-        setContentView(R.layout.activity_detail);
-
+        mDetailBinding = DataBindingUtil.setContentView(this, R.layout.activity_detail);
         mMovie = (Result) getIntent().getSerializableExtra("results");
 
         hookUpMovieDetailUI();
@@ -91,41 +88,31 @@ public class DetailActivity extends AppCompatActivity implements TrailerAdapter.
      */
     private void hookUpMovieDetailUI() {
 
-        mBackdrop = (ImageView) findViewById(R.id.iv_backdrop);
+        String voteAverageData = mMovie.getVoteAverage() + getString(R.string.vote_average_add_on);
+
         if (mMovie.getBackdropImage() == null) {
             String backdropImageUrl = QueryUtils.getBackdropImageUrl(mMovie.getBackdropPath());
             Picasso.with(this)
                     .load(backdropImageUrl)
                     .error(R.drawable.image_error)
-                    .into(mBackdrop);
+                    .into(mDetailBinding.movieDetail.ivBackdrop);
         } else
-            mBackdrop.setImageBitmap(ImageUtils.getImage(mMovie.getBackdropImage()));
+            mDetailBinding.movieDetail.ivBackdrop.setImageBitmap(ImageUtils.getImage(mMovie.getBackdropImage()));
 
-        mPoster = (ImageView) findViewById(R.id.iv_poster);
         if (mMovie.getPosterImage() == null) {
             String posterImageUrl = QueryUtils.getPosterImageUrlDetail(mMovie.getPosterPath());
             Picasso.with(this)
                     .load(posterImageUrl)
                     .error(R.drawable.image_error)
-                    .into(mPoster);
+                    .into(mDetailBinding.movieDetail.ivPoster);
         } else
-            mPoster.setImageBitmap(ImageUtils.getImage(mMovie.getPosterImage()));
+            mDetailBinding.movieDetail.ivPoster.setImageBitmap(ImageUtils.getImage(mMovie.getPosterImage()));
 
-        TextView title = (TextView) findViewById(R.id.tv_title);
-        title.setText(mMovie.getTitle());
-
-        TextView detailTitle = (TextView) findViewById(R.id.tv_detail_title);
-        detailTitle.setText(mMovie.getTitle());
-
-        TextView releaseDate = (TextView) findViewById(R.id.tv_detail_release_date);
-        releaseDate.setText(mMovie.getReleaseDate());
-
-        TextView voteAverage = (TextView) findViewById(R.id.tv_detail_vote_average);
-        String voteAverageData = mMovie.getVoteAverage() + getString(R.string.vote_average_add_on);
-        voteAverage.setText(voteAverageData);
-
-        TextView synopsis = (TextView) findViewById(R.id.tv_synopsis_description);
-        synopsis.setText(mMovie.getOverview());
+        mDetailBinding.movieDetail.tvTitle.setText(mMovie.getTitle());
+        mDetailBinding.movieDetail.tvDetailTitle.setText(mMovie.getTitle());
+        mDetailBinding.movieDetail.tvDetailReleaseDate.setText(mMovie.getReleaseDate());
+        mDetailBinding.movieDetail.tvDetailVoteAverage.setText(voteAverageData);
+        mDetailBinding.movieDetail.tvSynopsisDescription.setText(mMovie.getOverview());
 
         // setting up a loader to check if the movie exists in the database
         getSupportLoaderManager().initLoader(FETCH_MOVIE_FROM_DB_ID, null, new MovieCallback());
@@ -136,15 +123,12 @@ public class DetailActivity extends AppCompatActivity implements TrailerAdapter.
      */
     private void hookUpMovieReviewUI() {
 
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.rv_review);
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(DetailActivity.this);
-        recyclerView.setLayoutManager(layoutManager);
-        recyclerView.setNestedScrollingEnabled(false);
+        mDetailBinding.movieReview.rvReview.setLayoutManager(layoutManager);
+        mDetailBinding.movieReview.rvReview.setNestedScrollingEnabled(false);
 
         mReviewAdapter = new ReviewAdapter(mContext);
-        recyclerView.setAdapter(mReviewAdapter);
-
-        mEmptyViewReview = (TextView) findViewById(R.id.tv_empty_view_review);
+        mDetailBinding.movieReview.rvReview.setAdapter(mReviewAdapter);
 
         // setting up a loader to fetch the reviews corresponding to the movie from the internet
         getSupportLoaderManager().initLoader(FETCH_REVIEW_FROM_INTERNET_ID, null, new ReviewCallback());
@@ -155,12 +139,11 @@ public class DetailActivity extends AppCompatActivity implements TrailerAdapter.
      */
     private void hookUpMovieTrailerUI() {
 
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.rv_trailer);
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(DetailActivity.this, LinearLayoutManager.HORIZONTAL, false);
-        recyclerView.setLayoutManager(layoutManager);
+        mDetailBinding.movieTrailer.rvTrailer.setLayoutManager(layoutManager);
 
         mTrailerAdapter = new TrailerAdapter(mContext, this);
-        recyclerView.setAdapter(mTrailerAdapter);
+        mDetailBinding.movieTrailer.rvTrailer.setAdapter(mTrailerAdapter);
 
         // setting up a loader to fetch the trailers corresponding to the movie from the internet
         getSupportLoaderManager().initLoader(FETCH_TRAILER_FROM_INTERNET_ID, null, new TrailerCallback());
@@ -168,6 +151,7 @@ public class DetailActivity extends AppCompatActivity implements TrailerAdapter.
 
     /**
      * Function to launch a trailer
+     *
      * @param object
      */
     @Override
@@ -206,13 +190,13 @@ public class DetailActivity extends AppCompatActivity implements TrailerAdapter.
         public void onLoadFinished(Loader<List<Review>> loader, List<Review> data) {
             if (data != null && !data.isEmpty()) {
                 mReviewAdapter.setReviewData(data);
-                mEmptyViewReview.setVisibility(View.GONE);
+                mDetailBinding.movieReview.tvEmptyViewReview.setVisibility(View.GONE);
             } else {
                 mReviewAdapter.setReviewData(null);
                 if (!NetworkUtils.isConnectedToInternet(mContext))
-                    mEmptyViewReview.setText(R.string.no_internet);
+                    mDetailBinding.movieReview.tvEmptyViewReview.setText(R.string.no_internet);
                 else
-                    mEmptyViewReview.setText(R.string.no_reviews);
+                    mDetailBinding.movieReview.tvEmptyViewReview.setText(R.string.no_reviews);
             }
         }
 
@@ -280,24 +264,23 @@ public class DetailActivity extends AppCompatActivity implements TrailerAdapter.
 
         @Override
         public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-            final ImageView favourite = (ImageView) findViewById(R.id.iv_favourite);
             if (data.moveToFirst()) {
-                favourite.setImageResource(R.drawable.ic_favourite_solid);
+                mDetailBinding.movieDetail.ivFavourite.setImageResource(R.drawable.ic_favourite_solid);
                 mMovie.setFavourite(true);
             } else {
-                favourite.setImageResource(R.drawable.ic_favourite_hollow);
+                mDetailBinding.movieDetail.ivFavourite.setImageResource(R.drawable.ic_favourite_hollow);
                 mMovie.setFavourite(false);
             }
-            favourite.setOnClickListener(new View.OnClickListener() {
+            mDetailBinding.movieDetail.ivFavourite.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     if (mMovie.getFavourite()) {
                         mMovie.setFavourite(false);
-                        favourite.setImageResource(R.drawable.ic_favourite_hollow);
+                        mDetailBinding.movieDetail.ivFavourite.setImageResource(R.drawable.ic_favourite_hollow);
                         removeDetailsFromDb();
                     } else {
                         mMovie.setFavourite(true);
-                        favourite.setImageResource(R.drawable.ic_favourite_solid);
+                        mDetailBinding.movieDetail.ivFavourite.setImageResource(R.drawable.ic_favourite_solid);
                         storeDetailsInDb();
                     }
                 }
@@ -350,8 +333,8 @@ public class DetailActivity extends AppCompatActivity implements TrailerAdapter.
      * Helper method used to get a set of content values which is supposed to be inserted into the database
      */
     private ContentValues getInputSet() {
-        Bitmap posterBitmap = ((BitmapDrawable) mPoster.getDrawable()).getBitmap();
-        Bitmap backdropBitmap = ((BitmapDrawable) mBackdrop.getDrawable()).getBitmap();
+        Bitmap posterBitmap = ((BitmapDrawable) mDetailBinding.movieDetail.ivPoster.getDrawable()).getBitmap();
+        Bitmap backdropBitmap = ((BitmapDrawable) mDetailBinding.movieDetail.ivBackdrop.getDrawable()).getBitmap();
 
         ContentValues contentValues = new ContentValues();
         contentValues.put(MovieContract.FavouriteEntry.COLUMN_TITLE, mMovie.getTitle());
