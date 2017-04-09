@@ -13,7 +13,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -33,9 +32,9 @@ import com.facebook.stetho.Stetho;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener, MovieAdapter.GridItemClickListener {
+public class MovieListActivity extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener, MovieAdapter.GridItemClickListener {
 
-    private static final String LOG_TAG = MainActivity.class.getSimpleName();
+    private static final String LOG_TAG = MovieListActivity.class.getSimpleName();
 
     private static final int FETCH_MOVIE_FROM_INTERNET_ID = 11;
     private static final int FETCH_MOVIE_FROM_DB_ID = 21;
@@ -43,7 +42,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     private MovieAdapter mMovieAdapter;
     private TextView mEmptyView;
     private ProgressBar mProgressBar;
-    private Context mContext = MainActivity.this;
+    private Context mContext = MovieListActivity.this;
     private Toast mToast;
 
     public static final String mProjection[] = {MovieContract.FavouriteEntry._ID, MovieContract.FavouriteEntry.COLUMN_TITLE, MovieContract.FavouriteEntry.COLUMN_MOVIE_ID, MovieContract.FavouriteEntry.COLUMN_RELEASE_DATE, MovieContract.FavouriteEntry.COLUMN_USER_RATING, MovieContract.FavouriteEntry.COLUMN_SYNOPSIS, MovieContract.FavouriteEntry.COLUMN_POSTER, MovieContract.FavouriteEntry.COLUMN_BACKDROP};
@@ -75,22 +74,20 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 // Initialize Stetho with the Initializer
         Stetho.initialize(initializer);
 
-        setContentView(R.layout.activity_main);
-
-        Log.d(LOG_TAG, "In onCreate():");
+        setContentView(R.layout.activity_movie_list);
 
         mProgressBar = (ProgressBar) findViewById(R.id.pb_main_ui);
         mEmptyView = (TextView) findViewById(R.id.tv_empty_view_main_ui);
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.rv_main_ui);
-        RecyclerView.LayoutManager mLayoutManager;
 
+        RecyclerView.LayoutManager mLayoutManager;
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT)
             mLayoutManager = new GridLayoutManager(mContext, 2);
         else
             mLayoutManager = new GridLayoutManager(mContext, 3);
         recyclerView.setLayoutManager(mLayoutManager);
 
-        mMovieAdapter = new MovieAdapter(MainActivity.this, this);
+        mMovieAdapter = new MovieAdapter(MovieListActivity.this, this);
         recyclerView.setAdapter(mMovieAdapter);
 
         Bundle loaderBundle = new Bundle();
@@ -108,15 +105,13 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        Log.d(LOG_TAG, "In onCreateOptionsMenu():");
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu_main, menu);
+        inflater.inflate(R.menu.menu_movie_list, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        Log.d(LOG_TAG, "In onOptionsItemSelected():");
         switch (item.getItemId()) {
             case R.id.i_sort_by:
                 showMenu(findViewById(R.id.i_sort_by));
@@ -128,7 +123,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
     @Override
     public boolean onMenuItemClick(MenuItem item) {
-        Log.d(LOG_TAG, "In onMenuItemClick():");
         Bundle loaderBundle = new Bundle();
         switch (item.getItemId()) {
             case R.id.i_most_popular:
@@ -168,7 +162,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                 mToast = Toast.makeText(mContext, "Fetching your Favourite Movies", Toast.LENGTH_SHORT);
                 mToast.show();
                 showFetchingDataUI();
-                getSupportLoaderManager().initLoader(FETCH_MOVIE_FROM_DB_ID, null, new CursorCallback());
+                getSupportLoaderManager().restartLoader(FETCH_MOVIE_FROM_DB_ID, null, new CursorCallback());
                 return true;
             default:
                 return false;
@@ -181,8 +175,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
      * @param v is the view to which the pop-up will be attached
      */
     public void showMenu(View v) {
-        Log.d(LOG_TAG, "In showMenu():");
-        PopupMenu popup = new PopupMenu(MainActivity.this, v);
+        PopupMenu popup = new PopupMenu(MovieListActivity.this, v);
 
         // This activity implements OnMenuItemClickListener
         popup.setOnMenuItemClickListener(this);
@@ -194,7 +187,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
      * Helper Method to display the UI when there is no internet connectivity
      */
     public void showNoInternetUI() {
-        Log.d(LOG_TAG, "In showNoInternetUI():");
         mProgressBar.setVisibility(View.GONE);
         mMovieAdapter.setMovieData(null);
         mEmptyView.setText(getString(R.string.no_internet));
@@ -205,7 +197,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
      * important in slow internet connection
      */
     public void showFetchingDataUI() {
-        Log.d(LOG_TAG, "In showFetchingDataUI():");
         mProgressBar.setVisibility(View.VISIBLE);
         mMovieAdapter.setMovieData(null);
         mEmptyView.setText("");
@@ -218,8 +209,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     private class ResultCallback implements LoaderManager.LoaderCallbacks<List<Result>> {
         @Override
         public Loader<List<Result>> onCreateLoader(int id, final Bundle args) {
-            Log.d(LOG_TAG, "In onCreate():" + id);
-            return new AsyncTaskLoader<List<Result>>(MainActivity.this) {
+            return new AsyncTaskLoader<List<Result>>(MovieListActivity.this) {
 
                 @Override
                 protected void onStartLoading() {
@@ -229,7 +219,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                 @Override
                 public List<Result> loadInBackground() {
 
-                    String finalUrl = QueryUtils.getInitialUrl(MainActivity.this, args.getString(getString(R.string.sort_by)));
+                    String finalUrl = QueryUtils.getInitialUrl(MovieListActivity.this, args.getString(getString(R.string.sort_by)));
 
                     String moviewListJsonResponse = NetworkUtils.makeHTTPRequest(finalUrl);
 
@@ -240,7 +230,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
         @Override
         public void onLoadFinished(Loader<List<Result>> loader, List<Result> data) {
-            Log.d(LOG_TAG, "In onLoadFinished():" + loader.getId());
             //hide the progress bar
             mProgressBar.setVisibility(View.GONE);
             if (data != null && !data.isEmpty())
@@ -268,7 +257,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
         @Override
         public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-            Log.d(LOG_TAG, "In onCreateLoader():" + id);
             switch (id) {
                 case FETCH_MOVIE_FROM_DB_ID:
                     return new CursorLoader(mContext, MovieContract.FavouriteEntry.CONTENT_URI, mProjection, null, null, null);
@@ -279,7 +267,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
         @Override
         public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-            Log.d(LOG_TAG, "In onLoadFinished():" + loader.getId());
             List<Result> movieList = new ArrayList<>();
             if (data.moveToFirst()) {
                 do {
@@ -295,7 +282,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                     movieList.add(movie);
                 } while (data.moveToNext());
             }
-            data.close();
             mProgressBar.setVisibility(View.GONE);
             mMovieAdapter.setMovieData(movieList);
         }
@@ -308,12 +294,12 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
 
     /**
      * Function to launch the detail activity
+     *
      * @param object
      */
     @Override
     public void onClick(Result object) {
-        Log.d(LOG_TAG, "In onClick(Result):");
-        Intent detailIntent = new Intent(MainActivity.this, DetailActivity.class);
+        Intent detailIntent = new Intent(MovieListActivity.this, MovieDetailActivity.class);
         detailIntent.putExtra("results", object);
         startActivity(detailIntent);
     }

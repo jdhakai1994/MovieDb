@@ -11,19 +11,19 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity">
+        <activity android:name=".MovieListActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".DetailActivity"
+        <activity android:name=".MovieDetailActivity"
             android:label="@string/detail_activity_title"
-            android:parentActivityName="com.example.android.moviedb.MainActivity">
+            android:parentActivityName="com.example.android.moviedb.MovieListActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.example.android.moviedb.MainActivity" />
+                android:value="com.example.android.moviedb.MovieListActivity" />
         </activity>
         <provider android:name=".data.MovieProvider"
             android:authorities="com.example.android.moviedb"
