@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.CursorLoader;
@@ -32,18 +34,20 @@ import com.facebook.stetho.Stetho;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MovieListActivity extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener, MovieAdapter.GridItemClickListener {
+public class MovieGridActivity extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener, MovieAdapter.GridItemClickListener {
 
-    private static final String LOG_TAG = MovieListActivity.class.getSimpleName();
+    private static final String LOG_TAG = MovieGridActivity.class.getSimpleName();
 
     private static final int FETCH_MOVIE_FROM_INTERNET_ID = 11;
     private static final int FETCH_MOVIE_FROM_DB_ID = 21;
+    private static final int MSG_LOAD_FIRST_ITEM = 61;
 
     private MovieAdapter mMovieAdapter;
     private TextView mEmptyView;
     private ProgressBar mProgressBar;
-    private Context mContext = MovieListActivity.this;
+    private Context mContext = MovieGridActivity.this;
     private Toast mToast;
+    private Boolean mTwoPane = false;
 
     public static final String mProjection[] = {MovieContract.FavouriteEntry._ID, MovieContract.FavouriteEntry.COLUMN_TITLE, MovieContract.FavouriteEntry.COLUMN_MOVIE_ID, MovieContract.FavouriteEntry.COLUMN_RELEASE_DATE, MovieContract.FavouriteEntry.COLUMN_USER_RATING, MovieContract.FavouriteEntry.COLUMN_SYNOPSIS, MovieContract.FavouriteEntry.COLUMN_POSTER, MovieContract.FavouriteEntry.COLUMN_BACKDROP};
 
@@ -55,6 +59,7 @@ public class MovieListActivity extends AppCompatActivity implements PopupMenu.On
     public static final int INDEX_MOVIE_POSTER = 6;
     public static final int INDEX_MOVIE_BACKDROP = 7;
 
+    private static Handler mHandler;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -74,7 +79,15 @@ public class MovieListActivity extends AppCompatActivity implements PopupMenu.On
 // Initialize Stetho with the Initializer
         Stetho.initialize(initializer);
 
-        setContentView(R.layout.activity_movie_list);
+        setContentView(R.layout.activity_movie_grid);
+
+        if (findViewById(R.id.movie_detail_container) != null) {
+            // The detail container view will be present only in the
+            // large-screen layouts (res/layout-w720dp).
+            // If this view is present, then the
+            // activity should be in two-pane mode.
+            mTwoPane = true;
+        }
 
         mProgressBar = (ProgressBar) findViewById(R.id.pb_main_ui);
         mEmptyView = (TextView) findViewById(R.id.tv_empty_view_main_ui);
@@ -87,11 +100,19 @@ public class MovieListActivity extends AppCompatActivity implements PopupMenu.On
             mLayoutManager = new GridLayoutManager(mContext, 3);
         recyclerView.setLayoutManager(mLayoutManager);
 
-        mMovieAdapter = new MovieAdapter(MovieListActivity.this, this);
+        mMovieAdapter = new MovieAdapter(MovieGridActivity.this, this);
         recyclerView.setAdapter(mMovieAdapter);
 
         Bundle loaderBundle = new Bundle();
         loaderBundle.putString(getString(R.string.sort_by), getString(R.string.most_popular));
+
+        mHandler = new Handler(){
+            @Override
+            public void handleMessage(Message msg) {
+                if(msg.what == MSG_LOAD_FIRST_ITEM)
+                    onClick(mMovieAdapter.getMovieData());
+            }
+        };
 
         // if the device is not connected to internet change the text of the empty view
         if (!NetworkUtils.isConnectedToInternet(mContext))
@@ -169,13 +190,15 @@ public class MovieListActivity extends AppCompatActivity implements PopupMenu.On
         }
     }
 
+
+
     /**
      * Helper Method to display the pop-up menu
      *
      * @param v is the view to which the pop-up will be attached
      */
     public void showMenu(View v) {
-        PopupMenu popup = new PopupMenu(MovieListActivity.this, v);
+        PopupMenu popup = new PopupMenu(MovieGridActivity.this, v);
 
         // This activity implements OnMenuItemClickListener
         popup.setOnMenuItemClickListener(this);
@@ -209,7 +232,7 @@ public class MovieListActivity extends AppCompatActivity implements PopupMenu.On
     private class ResultCallback implements LoaderManager.LoaderCallbacks<List<Result>> {
         @Override
         public Loader<List<Result>> onCreateLoader(int id, final Bundle args) {
-            return new AsyncTaskLoader<List<Result>>(MovieListActivity.this) {
+            return new AsyncTaskLoader<List<Result>>(MovieGridActivity.this) {
 
                 @Override
                 protected void onStartLoading() {
@@ -219,7 +242,7 @@ public class MovieListActivity extends AppCompatActivity implements PopupMenu.On
                 @Override
                 public List<Result> loadInBackground() {
 
-                    String finalUrl = QueryUtils.getInitialUrl(MovieListActivity.this, args.getString(getString(R.string.sort_by)));
+                    String finalUrl = QueryUtils.getInitialUrl(MovieGridActivity.this, args.getString(getString(R.string.sort_by)));
 
                     String moviewListJsonResponse = NetworkUtils.makeHTTPRequest(finalUrl);
 
@@ -241,6 +264,8 @@ public class MovieListActivity extends AppCompatActivity implements PopupMenu.On
                 else
                     mEmptyView.setText(R.string.no_data_fetched);
             }
+            if(mTwoPane)
+                mHandler.sendEmptyMessage(MSG_LOAD_FIRST_ITEM);
         }
 
         @Override
@@ -284,6 +309,8 @@ public class MovieListActivity extends AppCompatActivity implements PopupMenu.On
             }
             mProgressBar.setVisibility(View.GONE);
             mMovieAdapter.setMovieData(movieList);
+            if(mTwoPane)
+                mHandler.sendEmptyMessage(MSG_LOAD_FIRST_ITEM);
         }
 
         @Override
@@ -299,8 +326,18 @@ public class MovieListActivity extends AppCompatActivity implements PopupMenu.On
      */
     @Override
     public void onClick(Result object) {
-        Intent detailIntent = new Intent(MovieListActivity.this, MovieDetailActivity.class);
-        detailIntent.putExtra("results", object);
-        startActivity(detailIntent);
+        if(mTwoPane){
+            Bundle bundle = new Bundle();
+            bundle.putSerializable(MovieDetailFragment.MOVIE_ARG_KEY, object);
+            MovieDetailFragment fragment = new MovieDetailFragment();
+            fragment.setArguments(bundle);
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.movie_detail_container, fragment)
+                    .commit();
+        } else {
+            Intent detailIntent = new Intent(MovieGridActivity.this, MovieDetailActivity.class);
+            detailIntent.putExtra(MovieDetailFragment.MOVIE_ARG_KEY, object);
+            startActivity(detailIntent);
+        }
     }
 }

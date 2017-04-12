@@ -28,6 +28,10 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder> 
 
     final private GridItemClickListener mOnClickListener;
 
+    public Result getMovieData() {
+        return mDataset.get(0);
+    }
+
     public interface GridItemClickListener {
         void onClick(Result object);
     }

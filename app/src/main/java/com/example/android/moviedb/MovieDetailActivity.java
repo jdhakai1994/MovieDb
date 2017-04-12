@@ -31,7 +31,7 @@ public class MovieDetailActivity extends AppCompatActivity {
         Stetho.initialize(initializer);
 
         setContentView(R.layout.activity_movie_detail);
-        Result movie = (Result) getIntent().getSerializableExtra("results");
+        Result movie = (Result) getIntent().getSerializableExtra(MovieDetailFragment.MOVIE_ARG_KEY);
 
         if (savedInstanceState == null) {
             // Create the detail fragment and add it to the activity

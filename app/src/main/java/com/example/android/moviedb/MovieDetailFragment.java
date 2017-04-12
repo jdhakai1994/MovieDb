@@ -36,7 +36,7 @@ import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
-import static com.example.android.moviedb.MovieListActivity.mProjection;
+import static com.example.android.moviedb.MovieGridActivity.mProjection;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -74,20 +74,13 @@ public class MovieDetailFragment extends Fragment implements TrailerAdapter.List
         mContext = getActivity();
         if (getArguments().containsKey(MOVIE_ARG_KEY))
             mMovie = (Result) getArguments().getSerializable(MOVIE_ARG_KEY);
-
-        // setting up a loader to check if the movie exists in the database
-        getActivity().getSupportLoaderManager().initLoader(FETCH_MOVIE_FROM_DB_ID, null, new MovieCallback());
-
-        // setting up a loader to fetch the reviews corresponding to the movie from the internet
-        getActivity().getSupportLoaderManager().initLoader(FETCH_REVIEW_FROM_INTERNET_ID, null, new ReviewCallback());
-
-        // setting up a loader to check if the movie exists in the database
-        getActivity().getSupportLoaderManager().initLoader(FETCH_MOVIE_FROM_DB_ID, null, new MovieCallback());
     }
 
     @Override
     public View onCreateView (LayoutInflater inflater, ViewGroup container,
                               Bundle savedInstanceState){
+
+        Log.d(LOG_TAG, "In onCreateView()");
 
         mFragmentMovieDetailBinding = DataBindingUtil.inflate(inflater, R.layout.fragment_movie_detail, container, false);
         View rootView = mFragmentMovieDetailBinding.getRoot();
@@ -140,6 +133,9 @@ public class MovieDetailFragment extends Fragment implements TrailerAdapter.List
         mFragmentMovieDetailBinding.movieDetail.tvDetailReleaseDate.setText(mMovie.getReleaseDate());
         mFragmentMovieDetailBinding.movieDetail.tvDetailVoteAverage.setText(voteAverageData);
         mFragmentMovieDetailBinding.movieDetail.tvSynopsisDescription.setText(mMovie.getOverview());
+
+        // setting up a loader to check if the movie exists in the database
+        getActivity().getSupportLoaderManager().initLoader(FETCH_MOVIE_FROM_DB_ID, null, new MovieCallback());
     }
 
     /**
@@ -153,6 +149,9 @@ public class MovieDetailFragment extends Fragment implements TrailerAdapter.List
 
         mReviewAdapter = new ReviewAdapter(mContext);
         mFragmentMovieDetailBinding.movieReview.rvReview.setAdapter(mReviewAdapter);
+
+        // setting up a loader to fetch the reviews corresponding to the movie from the internet
+        getActivity().getSupportLoaderManager().restartLoader(FETCH_REVIEW_FROM_INTERNET_ID, null, new ReviewCallback());
     }
 
     /**
@@ -166,8 +165,8 @@ public class MovieDetailFragment extends Fragment implements TrailerAdapter.List
         mTrailerAdapter = new TrailerAdapter(mContext, this);
         mFragmentMovieDetailBinding.movieTrailer.rvTrailer.setAdapter(mTrailerAdapter);
 
-        // setting up a loader to fetch the trailers corresponding to the movie from the internet
-        getActivity().getSupportLoaderManager().initLoader(FETCH_TRAILER_FROM_INTERNET_ID, null, new TrailerCallback());
+        // setting up a loader to fetch the trailer corresponding to the movie from the internet
+        getActivity().getSupportLoaderManager().restartLoader(FETCH_TRAILER_FROM_INTERNET_ID, null, new TrailerCallback());
     }
 
     /**

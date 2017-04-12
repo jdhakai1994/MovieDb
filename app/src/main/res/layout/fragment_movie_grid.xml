@@ -4,7 +4,7 @@
     android:id="@+id/activity_main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.example.android.moviedb.MovieListActivity">
+    tools:context="com.example.android.moviedb.MovieGridActivity">
 
     <ProgressBar
         android:id="@+id/pb_main_ui"
@@ -16,10 +16,10 @@
         android:id="@+id/tv_empty_view_main_ui"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerVertical="true"
         android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
         android:textAppearance="?android:attr/textAppearanceMedium"
-        tools:text="@string/no_data_fetched"/>
+        tools:text="@string/no_data_fetched" />
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/rv_main_ui"
