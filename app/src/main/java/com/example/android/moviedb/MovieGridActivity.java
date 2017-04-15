@@ -2,7 +2,7 @@ package com.example.android.moviedb;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Configuration;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Handler;
@@ -15,6 +15,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -26,6 +27,7 @@ import android.widget.Toast;
 import com.example.android.moviedb.adapter.MovieAdapter;
 import com.example.android.moviedb.data.MovieContract;
 import com.example.android.moviedb.models.Result;
+import com.example.android.moviedb.utilities.ImageUtils;
 import com.example.android.moviedb.utilities.JSONUtils;
 import com.example.android.moviedb.utilities.NetworkUtils;
 import com.example.android.moviedb.utilities.QueryUtils;
@@ -41,13 +43,15 @@ public class MovieGridActivity extends AppCompatActivity implements PopupMenu.On
     private static final int FETCH_MOVIE_FROM_INTERNET_ID = 11;
     private static final int FETCH_MOVIE_FROM_DB_ID = 21;
     private static final int MSG_LOAD_FIRST_ITEM = 61;
+    private static final String DETAIL_FRAGMENT_TAG = "fragment_tag";
 
     private MovieAdapter mMovieAdapter;
-    private TextView mEmptyView;
-    private ProgressBar mProgressBar;
     private Context mContext = MovieGridActivity.this;
     private Toast mToast;
     private Boolean mTwoPane = false;
+    private TextView mEmptyView;
+    private RecyclerView mRecyclerView;
+    private ProgressBar mProgressBar;
 
     public static final String mProjection[] = {MovieContract.FavouriteEntry._ID, MovieContract.FavouriteEntry.COLUMN_TITLE, MovieContract.FavouriteEntry.COLUMN_MOVIE_ID, MovieContract.FavouriteEntry.COLUMN_RELEASE_DATE, MovieContract.FavouriteEntry.COLUMN_USER_RATING, MovieContract.FavouriteEntry.COLUMN_SYNOPSIS, MovieContract.FavouriteEntry.COLUMN_POSTER, MovieContract.FavouriteEntry.COLUMN_BACKDROP};
 
@@ -60,67 +64,96 @@ public class MovieGridActivity extends AppCompatActivity implements PopupMenu.On
     public static final int INDEX_MOVIE_BACKDROP = 7;
 
     private static Handler mHandler;
+
+    private SharedPreferences mSharedPreferences;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.d(LOG_TAG, "In onCreate(Bundle)");
         super.onCreate(savedInstanceState);
 
         // Create an InitializerBuilder
-        Stetho.InitializerBuilder initializerBuilder =
-                Stetho.newInitializerBuilder(this);
-
-// Enable Chrome DevTools
-        initializerBuilder.enableWebKitInspector(
-                Stetho.defaultInspectorModulesProvider(this)
-        );
-
-// Use the InitializerBuilder to generate an Initializer
+        Stetho.InitializerBuilder initializerBuilder = Stetho.newInitializerBuilder(this);
+        // Enable Chrome DevTools
+        initializerBuilder.enableWebKitInspector(Stetho.defaultInspectorModulesProvider(this));
+        // Use the InitializerBuilder to generate an Initializer
         Stetho.Initializer initializer = initializerBuilder.build();
-
-// Initialize Stetho with the Initializer
+        // Initialize Stetho with the Initializer
         Stetho.initialize(initializer);
 
         setContentView(R.layout.activity_movie_grid);
 
-        if (findViewById(R.id.movie_detail_container) != null) {
-            // The detail container view will be present only in the
-            // large-screen layouts (res/layout-w720dp).
-            // If this view is present, then the
-            // activity should be in two-pane mode.
+        //check if the device has a wide screen and if it requires two panes
+        if (findViewById(R.id.movie_detail_container) != null)
             mTwoPane = true;
-        }
 
-        mProgressBar = (ProgressBar) findViewById(R.id.pb_main_ui);
+        //get reference to the views
         mEmptyView = (TextView) findViewById(R.id.tv_empty_view_main_ui);
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.rv_main_ui);
+        mRecyclerView = (RecyclerView) findViewById(R.id.rv_main_ui);
+        mProgressBar = (ProgressBar) findViewById(R.id.pb_main_ui);
 
+        //determine the number of columns required in the layout
         RecyclerView.LayoutManager mLayoutManager;
-        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT)
+        if (mTwoPane)
             mLayoutManager = new GridLayoutManager(mContext, 2);
         else
-            mLayoutManager = new GridLayoutManager(mContext, 3);
-        recyclerView.setLayoutManager(mLayoutManager);
+            mLayoutManager = new GridLayoutManager(mContext, ImageUtils.calculateNoOfColumns(mContext));
 
+        mRecyclerView.setLayoutManager(mLayoutManager);
         mMovieAdapter = new MovieAdapter(MovieGridActivity.this, this);
-        recyclerView.setAdapter(mMovieAdapter);
+        mRecyclerView.setAdapter(mMovieAdapter);
 
-        Bundle loaderBundle = new Bundle();
-        loaderBundle.putString(getString(R.string.sort_by), getString(R.string.most_popular));
+        //get a reference to SharedPreferences which would store the sort order choice
+        mSharedPreferences = getPreferences(Context.MODE_PRIVATE);
 
-        mHandler = new Handler(){
+        //this handler will be used to perform the onClick(Result) action and launch movie details window
+        mHandler = new Handler() {
             @Override
             public void handleMessage(Message msg) {
-                if(msg.what == MSG_LOAD_FIRST_ITEM)
-                    onClick(mMovieAdapter.getMovieData());
+                if (msg.what == MSG_LOAD_FIRST_ITEM) {
+                    //to prevent NULL POINTER EXCEPTION
+                    if (mMovieAdapter.getItemCount() > 0)
+                        onClick(mMovieAdapter.getFirstMovieData());
+                    else
+                        displayBlankRightPane();
+                }
             }
         };
 
-        // if the device is not connected to internet change the text of the empty view
-        if (!NetworkUtils.isConnectedToInternet(mContext))
-            showNoInternetUI();
-        else {
+        // this part will be executed
+        // 1. when the activity is launched for the first time
+        // 2. when the device is rotated because the previous activity would be destroyed
+        if (savedInstanceState == null) {
+            // will initialize the appropriate loader based on sort order preference
+            if (mSharedPreferences.getString(getString(R.string.sort_by), getString(R.string.most_popular)).equals(getString(R.string.favourite))) {
+                showFetchingDataUI();
+                getSupportLoaderManager().initLoader(FETCH_MOVIE_FROM_DB_ID, null, new CursorCallback());
+            } else {
+                if (!NetworkUtils.isConnectedToInternet(mContext))
+                    showNoInternetUI();
+                else {
+                    showFetchingDataUI();
+                    getSupportLoaderManager().initLoader(FETCH_MOVIE_FROM_INTERNET_ID, null, new ResultCallback());
+                }
+            }
+        }
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        // will initialize the appropriate loader based on sort order preference
+        if (mSharedPreferences.getString(getString(R.string.sort_by), getString(R.string.most_popular)).equals(getString(R.string.favourite))) {
             showFetchingDataUI();
-            // Initialise the custom loader
-            getSupportLoaderManager().initLoader(FETCH_MOVIE_FROM_INTERNET_ID, loaderBundle, new ResultCallback());
+            getSupportLoaderManager().initLoader(FETCH_MOVIE_FROM_DB_ID, null, new CursorCallback());
+        } else {
+            if (!NetworkUtils.isConnectedToInternet(mContext)) {
+                showNoInternetUI();
+                displayBlankRightPane();
+            } else {
+                showFetchingDataUI();
+                getSupportLoaderManager().initLoader(FETCH_MOVIE_FROM_INTERNET_ID, null, new ResultCallback());
+            }
         }
     }
 
@@ -144,44 +177,42 @@ public class MovieGridActivity extends AppCompatActivity implements PopupMenu.On
 
     @Override
     public boolean onMenuItemClick(MenuItem item) {
-        Bundle loaderBundle = new Bundle();
+        SharedPreferences.Editor editor = mSharedPreferences.edit();
         switch (item.getItemId()) {
             case R.id.i_most_popular:
-                if (mToast != null)
-                    mToast.cancel();
-                mToast = Toast.makeText(mContext, "Fetching Most Popular Movies", Toast.LENGTH_SHORT);
-                mToast.show();
-
-                loaderBundle.putString(getString(R.string.sort_by), getString(R.string.most_popular));
+                showToast(getString(R.string.most_popular));
+                editor.putString(getString(R.string.sort_by), getString(R.string.most_popular));
+                editor.apply();
                 // if the device is not connected to internet change the text of the empty view
-                if (!NetworkUtils.isConnectedToInternet(mContext))
+                if (!NetworkUtils.isConnectedToInternet(mContext)) {
                     showNoInternetUI();
-                else {
+                    if (mTwoPane)
+                        displayBlankRightPane();
+                } else {
                     showFetchingDataUI();
                     // Initialise the custom loader
-                    getSupportLoaderManager().restartLoader(FETCH_MOVIE_FROM_INTERNET_ID, loaderBundle, new ResultCallback());
+                    getSupportLoaderManager().restartLoader(FETCH_MOVIE_FROM_INTERNET_ID, null, new ResultCallback());
                 }
                 return true;
             case R.id.i_highest_rated:
-                if (mToast != null)
-                    mToast.cancel();
-                mToast = Toast.makeText(mContext, "Fetching Highest Rated Movies", Toast.LENGTH_SHORT);
-                mToast.show();
-                loaderBundle.putString(getString(R.string.sort_by), getString(R.string.highest_rated));
+                showToast(getString(R.string.highest_rated));
+                editor.putString(getString(R.string.sort_by), getString(R.string.highest_rated));
+                editor.commit();
                 // if the device is not connected to internet change the text of the empty view
-                if (!NetworkUtils.isConnectedToInternet(mContext))
+                if (!NetworkUtils.isConnectedToInternet(mContext)) {
                     showNoInternetUI();
-                else {
+                    if (mTwoPane)
+                        displayBlankRightPane();
+                } else {
                     showFetchingDataUI();
                     // Initialise the custom loader
-                    getSupportLoaderManager().restartLoader(FETCH_MOVIE_FROM_INTERNET_ID, loaderBundle, new ResultCallback());
+                    getSupportLoaderManager().restartLoader(FETCH_MOVIE_FROM_INTERNET_ID, null, new ResultCallback());
                 }
                 return true;
             case R.id.i_favourite:
-                if (mToast != null)
-                    mToast.cancel();
-                mToast = Toast.makeText(mContext, "Fetching your Favourite Movies", Toast.LENGTH_SHORT);
-                mToast.show();
+                showToast(getString(R.string.favourite));
+                editor.putString(getString(R.string.sort_by), getString(R.string.favourite));
+                editor.commit();
                 showFetchingDataUI();
                 getSupportLoaderManager().restartLoader(FETCH_MOVIE_FROM_DB_ID, null, new CursorCallback());
                 return true;
@@ -189,7 +220,6 @@ public class MovieGridActivity extends AppCompatActivity implements PopupMenu.On
                 return false;
         }
     }
-
 
 
     /**
@@ -204,6 +234,16 @@ public class MovieGridActivity extends AppCompatActivity implements PopupMenu.On
         popup.setOnMenuItemClickListener(this);
         popup.inflate(R.menu.sortby_menu);
         popup.show();
+    }
+
+    /**
+     * Helper Method to display toast
+     */
+    public void showToast(String message) {
+        if (mToast != null)
+            mToast.cancel();
+        mToast = Toast.makeText(mContext, "Fetching " + message + " movies", Toast.LENGTH_SHORT);
+        mToast.show();
     }
 
     /**
@@ -226,6 +266,25 @@ public class MovieGridActivity extends AppCompatActivity implements PopupMenu.On
     }
 
     /**
+     * Helper Method to display the UI when no data is fetched
+     */
+    public void showNoDataUI() {
+        mProgressBar.setVisibility(View.GONE);
+        mMovieAdapter.setMovieData(null);
+        mEmptyView.setText(getString(R.string.no_data_fetched));
+    }
+
+    /**
+     * Helper Method to show a blank window on the right pane
+     */
+    private void displayBlankRightPane() {
+        MovieDetailFragment movieDetailFragment = (MovieDetailFragment) getSupportFragmentManager()
+                .findFragmentByTag(DETAIL_FRAGMENT_TAG);
+        if (movieDetailFragment != null)
+            getSupportFragmentManager().beginTransaction().remove(movieDetailFragment).commit();
+    }
+
+    /**
      * Inner Class representing the callback from the loader used to setup the
      * main ui section when most_popular/top_rated option is selected
      */
@@ -234,37 +293,45 @@ public class MovieGridActivity extends AppCompatActivity implements PopupMenu.On
         public Loader<List<Result>> onCreateLoader(int id, final Bundle args) {
             return new AsyncTaskLoader<List<Result>>(MovieGridActivity.this) {
 
+                private List<Result> mMovieList;
+
                 @Override
                 protected void onStartLoading() {
-                    forceLoad();
+                    if (mMovieList != null)
+                        deliverResult(mMovieList);
+                    else
+                        forceLoad();
+                }
+
+                @Override
+                public void deliverResult(List<Result> data) {
+                    mMovieList = data;
+                    super.deliverResult(data);
                 }
 
                 @Override
                 public List<Result> loadInBackground() {
-
-                    String finalUrl = QueryUtils.getInitialUrl(MovieGridActivity.this, args.getString(getString(R.string.sort_by)));
-
-                    String moviewListJsonResponse = NetworkUtils.makeHTTPRequest(finalUrl);
-
-                    return JSONUtils.parseMovieListJSON(moviewListJsonResponse);
+                    String choice = mSharedPreferences.getString(getString(R.string.sort_by), getString(R.string.most_popular));
+                    String finalUrl = QueryUtils.getInitialUrl(MovieGridActivity.this, choice);
+                    String movieListJsonResponse = NetworkUtils.makeHTTPRequest(finalUrl);
+                    return JSONUtils.parseMovieListJSON(movieListJsonResponse);
                 }
             };
         }
 
         @Override
         public void onLoadFinished(Loader<List<Result>> loader, List<Result> data) {
-            //hide the progress bar
-            mProgressBar.setVisibility(View.GONE);
-            if (data != null && !data.isEmpty())
+            if (data != null && !data.isEmpty()) {
+                mProgressBar.setVisibility(View.GONE);
                 mMovieAdapter.setMovieData(data);
-            else {
+            } else {
                 mMovieAdapter.setMovieData(null);
                 if (!NetworkUtils.isConnectedToInternet(mContext))
-                    mEmptyView.setText(R.string.no_internet);
+                    showNoInternetUI();
                 else
-                    mEmptyView.setText(R.string.no_data_fetched);
+                    showNoDataUI();
             }
-            if(mTwoPane)
+            if (mTwoPane)
                 mHandler.sendEmptyMessage(MSG_LOAD_FIRST_ITEM);
         }
 
@@ -292,6 +359,10 @@ public class MovieGridActivity extends AppCompatActivity implements PopupMenu.On
 
         @Override
         public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+            // every time any movie is updated the cursor loader will get a callback
+            // want to update the contents of adapter only if the preference is favourite
+            if (!mSharedPreferences.getString(getString(R.string.sort_by), getString(R.string.most_popular)).equals(getString(R.string.favourite)))
+                return;
             List<Result> movieList = new ArrayList<>();
             if (data.moveToFirst()) {
                 do {
@@ -308,8 +379,15 @@ public class MovieGridActivity extends AppCompatActivity implements PopupMenu.On
                 } while (data.moveToNext());
             }
             mProgressBar.setVisibility(View.GONE);
-            mMovieAdapter.setMovieData(movieList);
-            if(mTwoPane)
+            //mMovieAdapter.setMovieData(movieList);
+            if (!movieList.isEmpty()) {
+                mProgressBar.setVisibility(View.GONE);
+                mMovieAdapter.setMovieData(movieList);
+            } else {
+                mMovieAdapter.setMovieData(null);
+                showNoDataUI();
+            }
+            if (mTwoPane)
                 mHandler.sendEmptyMessage(MSG_LOAD_FIRST_ITEM);
         }
 
@@ -326,14 +404,13 @@ public class MovieGridActivity extends AppCompatActivity implements PopupMenu.On
      */
     @Override
     public void onClick(Result object) {
-        if(mTwoPane){
+        if (mTwoPane) {
             Bundle bundle = new Bundle();
             bundle.putSerializable(MovieDetailFragment.MOVIE_ARG_KEY, object);
-            MovieDetailFragment fragment = new MovieDetailFragment();
-            fragment.setArguments(bundle);
+            MovieDetailFragment movieDetailFragment = new MovieDetailFragment();
+            movieDetailFragment.setArguments(bundle);
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.movie_detail_container, fragment)
-                    .commit();
+                    .replace(R.id.movie_detail_container, movieDetailFragment, DETAIL_FRAGMENT_TAG).commit();
         } else {
             Intent detailIntent = new Intent(MovieGridActivity.this, MovieDetailActivity.class);
             detailIntent.putExtra(MovieDetailFragment.MOVIE_ARG_KEY, object);

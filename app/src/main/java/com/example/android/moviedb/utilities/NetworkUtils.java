@@ -1,8 +1,6 @@
 package com.example.android.moviedb.utilities;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
@@ -58,42 +56,6 @@ public class NetworkUtils {
 
         if (jsonData != null)
             return jsonData;
-        else
-            return null;
-    }
-/*
-    public static Bitmap getBitmapFromURL(String src) {
-        try {
-            URL url = new URL(src);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setDoInput(true);
-            connection.connect();
-            InputStream input = connection.getInputStream();
-            Bitmap myBitmap = BitmapFactory.decodeStream(input);
-            return myBitmap;
-        } catch (IOException e) {
-            // Log exception
-            return null;
-        }
-    }
-*/
-    public static Bitmap getBitmapFromURL(String imageUrl) {
-
-        Request request = new Request.Builder()
-                .url(imageUrl)
-                .build();
-
-        Bitmap bitmap = null;
-        try {
-            Response response = client.newCall(request).execute();
-            if (response.isSuccessful())
-                bitmap = BitmapFactory.decodeStream(response.body().byteStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        if (bitmap != null)
-            return bitmap;
         else
             return null;
     }

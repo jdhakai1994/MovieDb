@@ -33,7 +33,6 @@ public class QueryUtils {
     private static final String IMAGE_SIZE_DETAIL = "w185";
     private static final String IMAGE_BASE_URI = "https://image.tmdb.org/t/p";
 
-
     private static final String YOUTUBE_IMAGE_AUTHORITY = "i.ytimg.com";
     private static final String YOUTUBE_VIEW_AUTHORITY = "www.youtube.com";
 
@@ -76,6 +75,11 @@ public class QueryUtils {
         return builder.build().toString();
     }
 
+    /**
+     * Helper Method to get the poster image URL for the main activity
+     * @param posterPath is the path to the image
+     * @return the URL in String format
+     */
     public static String getPosterImageUrl(String posterPath) {
 
         Uri uri = Uri.parse(IMAGE_BASE_URI);
@@ -86,6 +90,11 @@ public class QueryUtils {
         return builder.build().toString();
     }
 
+    /**
+     * Helper Method to get the poster image URL for the detail activity/fragment
+     * @param posterPath is the path to the image
+     * @return the URL in String format
+     */
     public static String getPosterImageUrlDetail(String posterPath) {
 
         Uri uri = Uri.parse(IMAGE_BASE_URI);
@@ -96,6 +105,11 @@ public class QueryUtils {
         return builder.build().toString();
     }
 
+    /**
+     * Helper Method to get the backdrop image URL
+     * @param backdropPath is the path to the image
+     * @return the URL in String format
+     */
     public static String getBackdropImageUrl(String backdropPath) {
 
         Uri uri = Uri.parse(IMAGE_BASE_URI);
@@ -110,7 +124,7 @@ public class QueryUtils {
      * Helper Method to build a url to fetch review based on movie id
      *
      * @param context is the application context
-     * @param id is the moview id
+     * @param id is the movie id
      * @return the final uri in String format
      */
     public static String getReviewUrl(Context context, Integer id) {
@@ -132,7 +146,7 @@ public class QueryUtils {
      * Helper Method to build a url to fetch video based on movie id
      *
      * @param context is the application context
-     * @param id is the moview id
+     * @param id is the movie id
      * @return the final uri in String format
      */
     public static String getTrailerUrl(Context context, Integer id) {
@@ -151,7 +165,7 @@ public class QueryUtils {
     }
 
     /**
-     * Helper Method to build a url to fetch video based on movie id
+     * Helper Method to build a url to fetch video thumbnail based on movie id
      *
      * @param key is the unique key representing resource in YouTube API
      * @return the final uri in String format
@@ -170,6 +184,13 @@ public class QueryUtils {
         return builder.build().toString();
     }
 
+    /**
+     * Helper Method to get youtube URL to be used to launch the video intent
+     * based on the key
+     *
+     * @param key id the unique key which identify a youtube data
+     * @return the url in String format
+     */
     public static String getYouTubeUrl(String key) {
 
         Uri.Builder builder = new Uri.Builder();

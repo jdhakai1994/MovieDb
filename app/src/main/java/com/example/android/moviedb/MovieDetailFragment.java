@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
@@ -15,7 +16,6 @@ import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -69,18 +69,16 @@ public class MovieDetailFragment extends Fragment implements TrailerAdapter.List
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Log.d(LOG_TAG, "In onCreate()");
-
         mContext = getActivity();
+
+        //get the movie object passed
         if (getArguments().containsKey(MOVIE_ARG_KEY))
             mMovie = (Result) getArguments().getSerializable(MOVIE_ARG_KEY);
     }
 
     @Override
-    public View onCreateView (LayoutInflater inflater, ViewGroup container,
-                              Bundle savedInstanceState){
-
-        Log.d(LOG_TAG, "In onCreateView()");
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
 
         mFragmentMovieDetailBinding = DataBindingUtil.inflate(inflater, R.layout.fragment_movie_detail, container, false);
         View rootView = mFragmentMovieDetailBinding.getRoot();
@@ -92,13 +90,20 @@ public class MovieDetailFragment extends Fragment implements TrailerAdapter.List
         return rootView;
     }
 
+    @Override
+    public void onViewStateRestored(@Nullable Bundle savedInstanceState) {
+        super.onViewStateRestored(savedInstanceState);
+        //important to preserve the state of the favourite button
+        getActivity().getSupportLoaderManager().restartLoader(FETCH_MOVIE_FROM_DB_ID, null, new MovieCallback());
+    }
+
     /**
-     * Function to launch a trailer
+     * Helper Method to launch a trailer
      *
      * @param object
      */
     @Override
-    public void onClick (Trailer object){
+    public void onClick(Trailer object) {
         Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(QueryUtils.getYouTubeUrl(object.getKey())));
         startActivity(browserIntent);
     }
@@ -346,8 +351,16 @@ public class MovieDetailFragment extends Fragment implements TrailerAdapter.List
 
         @Override
         public void onLoadFinished(Loader<List<Trailer>> loader, List<Trailer> data) {
-            if (data != null && !data.isEmpty())
+            if (data != null && !data.isEmpty()) {
                 mTrailerAdapter.setTrailerData(data);
+                mFragmentMovieDetailBinding.movieTrailer.tvEmptyViewTrailer.setVisibility(View.GONE);
+            } else {
+                mTrailerAdapter.setTrailerData(null);
+                if (!NetworkUtils.isConnectedToInternet(mContext))
+                    mFragmentMovieDetailBinding.movieTrailer.tvEmptyViewTrailer.setText(R.string.no_internet);
+                else
+                    mFragmentMovieDetailBinding.movieTrailer.tvEmptyViewTrailer.setText(R.string.no_trailers);
+            }
         }
 
         @Override

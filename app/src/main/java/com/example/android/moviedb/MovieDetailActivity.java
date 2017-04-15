@@ -36,10 +36,11 @@ public class MovieDetailActivity extends AppCompatActivity {
         if (savedInstanceState == null) {
             // Create the detail fragment and add it to the activity
             // using a fragment transaction.
-            Log.d(LOG_TAG, "In the if block in onCreate()");
+            Log.d(LOG_TAG, "savedInstanceState is null in onCreate()");
             Bundle bundle = new Bundle();
             bundle.putSerializable(MovieDetailFragment.MOVIE_ARG_KEY, movie);
             MovieDetailFragment fragment = new MovieDetailFragment();
+            fragment.setRetainInstance(true);
             fragment.setArguments(bundle);
             getSupportFragmentManager().beginTransaction()
                     .add(R.id.movie_detail_container, fragment)
